@@ -1,39 +1,51 @@
 ---
-import LiveNow from '../components/LiveNow.astro';
+// Home, in reading order: the Today band (the lead), the prophecy on the live odds with the title race, the model's
+// record so far, the next Pick'Ems and the clouded callout, then links on. Plan: docs/superpowers/plans/2026-10-19-home-rework.md (H3).
 import Base from '../layouts/Base.astro';
 import Logo from '../components/Logo.astro';
 import PickemsPanel from '../components/PickemsPanel.astro';
 import TitleRace from '../components/TitleRace.astro';
-import { overview, pickems, ratings, series, teamName } from '../lib/data';
-import { lockStage, stageLine } from '../lib/nav';
+import TodayBand from '../components/TodayBand.astro';
+import { live, overview, ratings, teamName } from '../lib/data';
+import { pickemPoints, resultRows } from '../lib/grading';
+import { NAV, lockStage, stageLine } from '../lib/nav';
+import { STAGES, view } from '../lib/stage';
+import { icon } from '../lib/icons';
 import { pct } from '../lib/format';
+import { url } from '../lib/url';
 
 const o = overview();
 const rt = ratings();
-const champ = o.champion ?? '';
+// The prophecy reads the live odds (knocked-out teams are absent there), else the frozen baseline.
+const lv = live();
+const isLive = lv.length > 0;
+const odds = (isLive ? lv.map((l) => ({ code: l.team, p: Number(l.p_champion) })) : rt.map((r) => ({ code: r.code, p: Number(r.p_champion) })))
+  .filter((r) => Number.isFinite(r.p)).sort((a, b) => b.p - a.p);
+const champ = odds[0]?.code ?? '';
 const champName = champ ? teamName(champ) : 'UNKNOWN';
-const cpRaw = Number(o.champion_p);
-const cp = Number.isFinite(cpRaw) ? cpRaw : null;
+const cp = odds[0]?.p ?? null;
+const champRow = rt.find((r) => r.code === champ);
+const sealDay = /^(\d\d\/\d\d)/.exec(o.baseline_created ?? '')?.[1] ?? 'UNKNOWN';
+const sealLine = !isLive ? `Frozen baseline, sealed ${sealDay}` : champRow ? `${pct(champRow.p_champion, 1)} at the seal, ${sealDay}` : '';
 
-// "One in every three futures": a simple fraction when champion_p sits close to one, else "About N in 100".
+// "One in every three futures": a simple fraction when the chance sits close to one, else "About N in 100".
 const WORD = ['', 'One', 'Two', 'Three', 'Four', 'Five'];
 const NOUN: Record<string, string> = { '1/2': 'a half', '1/3': 'a third', '1/4': 'a quarter', '1/5': 'a fifth', '2/3': 'two thirds', '3/4': 'three quarters' };
 const frac = (p: number) => { for (const n of [2, 3, 4, 5]) for (let k = 1; k < n; k++) if (Math.abs(p - k / n) < 0.015) return { k, n }; return null; };
 const f = cp == null ? null : frac(cp);
 const n100 = cp == null ? 0 : Math.round(cp * 100);
-// Tagline: how far the favourite is ahead of the next best team (frozen ratings, same run as the hero number)
-const runnerUp = [...rt].filter((r) => r.code !== champ).sort((a, b) => b.p_champion - a.p_champion)[0];
-const ratio = cp != null && runnerUp?.p_champion ? cp / runnerUp.p_champion : null;
+// Tagline: how far the favourite is ahead of the next best team (same odds as the hero number)
+const runnerUp = odds[1];
+const ratio = cp != null && runnerUp?.p ? cp / runnerUp.p : null;
 const ru = runnerUp ? teamName(runnerUp.code) : 'UNKNOWN';
 const line1 = ratio == null ? 'Title chance: UNKNOWN.'
   : ratio >= 2.5 ? `${Math.round(ratio)} times as likely as ${ru}, the next best, to lift the cup.`
   : ratio >= 1.95 ? `Twice as likely as ${ru}, the next best, to lift the cup.`
   : ratio >= 1.6 ? `Nearly twice as likely as ${ru}, the next best, to lift the cup.`
-  : ratio >= 1.15 ? `Clear of ${ru}, the next best at ${pct(runnerUp.p_champion, 1)}, as the likeliest champion.`
-  : `Barely ahead of ${ru} (${pct(runnerUp.p_champion, 1)}) as the likeliest champion.`;
+  : ratio >= 1.15 ? `Clear of ${ru}, the next best at ${pct(runnerUp.p, 1)}, as the likeliest champion.`
+  : `Barely ahead of ${ru} (${pct(runnerUp.p, 1)}) as the likeliest champion.`;
 const others = cp == null ? '' : f ? `${WORD[f.n - f.k]} in ${WORD[f.n].toLowerCase()} futures ${f.n - f.k === 1 ? 'crowns' : 'crown'} someone else.` : `About ${100 - n100} in 100 futures crown someone else.`;
 const noun = f ? NOUN[`${f.k}/${f.n}`] ?? pct(cp, 1) : pct(cp, 1);
-const champRow = rt.find((r) => r.code === champ);
 const byElo = [...rt].sort((a, b) => b.elo - a.elo);
 const eloRank = byElo.findIndex((r) => r.code === champ) + 1;
 const ORD = ['', '', 'second', 'third', 'fourth', 'fifth'];
@@ -41,15 +53,26 @@ const lead = champRow?.headline?.split(/\s*[(;,]/)[0]?.trim() || (champRow ? `${
 const best = eloRank === 1 ? 'with the best rating in the field' : eloRank > 1 ? `with the ${ORD[eloRank] ?? `number ${eloRank}`} best rating in the field` : 'rating UNKNOWN';
 const closing = cp == null ? '' : `${lead}, ${best}, yet ${noun} is not a certainty. ${others}`;
 
-// Frozen baseline knockouts: KO-F is the likeliest final; the spoiler is the underdog of the series with the highest p_upset.
-const ko = series().filter((s) => s.set === 'baseline' && s.phase === 'Knockouts');
-const fin = ko.find((s) => s.id === 'KO-F');
-const finalPair = fin ? `${teamName(fin.team_a)} v ${teamName(fin.team_b)}` : 'UNKNOWN';
-const sp = ko.filter((s) => s.p_upset != null && s.loser).sort((a, b) => (b.p_upset ?? 0) - (a.p_upset ?? 0))[0];
-const spoiler = sp ? `${teamName(sp.loser)}, in the ${sp.stage.replace(/\s*\(.*\)/, '').toLowerCase()}` : 'UNKNOWN';
+// Likeliest final: KO-F of the latest staged run (the frozen baseline until a run has knockouts)
+const fin = view(STAGES[2], 'latest').rows.find((s) => s.id === 'KO-F');
 const venue = fin && /\(([^)]+)\)/.exec(fin.time_venue)?.[1];
 const finDate = fin && /\d\d\/\d\d\/\d{4}/.exec(fin.time_nz)?.[0];
-const finalWhere = venue && finDate ? `${venue}, ${finDate} NZDT` : 'UNKNOWN';
+const finalLine = fin ? `Likeliest final ${fin.team_a} v ${fin.team_b}, ${venue && finDate ? `${venue} ${finDate} NZDT` : 'venue and date UNKNOWN'}` : '';
+
+// The model so far: winners called per stage (the call the match cards show: the latest staged run's pick, else the
+// frozen baseline's; the frozen baseline's own record, which the Scorecard grades, underneath when it differs), then
+// Pick'Ems points per stage once any are decided.
+const rr = resultRows();
+const tally = (hs: (boolean | null | undefined)[]) => { const h = hs.filter((x): x is boolean => x != null); return `${h.filter(Boolean).length} of ${h.length}`; };
+const called = [...new Set(rr.map((r) => r.phase))].map((phase) => {
+  const mine = rr.filter((r) => r.phase === phase);
+  const v = tally(mine.map((r) => r.staged?.hit ?? r.hit)), base = tally(mine.map((r) => r.hit));
+  return { k: `${phase} winners called`, v, sub: base !== v ? `Frozen baseline ${base}` : '' };
+}).filter((x) => !x.v.endsWith(' of 0'));
+const points = pickemPoints().filter((p) => p.possible > 0).map((p) => ({
+  k: `${p.stage} Pick'Ems points`, v: `${p.earned} of ${p.max ?? 'UNKNOWN'}`, sub: p.max != null && p.possible < p.max ? `${p.possible} decided so far` : '',
+}));
+const sofar = [...called, ...points];
 
 // Callout, short form (README: risk_assumption "in short form"): the region gap in standard errors from
 // overview.region_gap_lck_lpl, plus the assumption's closing sentence (what depends on it). Then the detection text
@@ -64,108 +87,108 @@ const riskWatch = o.risk_detection
   ? sentences(o.risk_detection).filter((x) => !/\btab\b/i.test(x)).join(' ').replace(/\s*\([^()]*\d\d\/\d\d[^()]*\)/g, '').replace(/\bstaged /g, '')
   : 'UNKNOWN';
 
-// Quick picks from the frozen overview.
-const piw = o.playin_winner;
-const piwP = rt.find((r) => r.code === piw)?.p_playin;
-const sw30 = pickems().filter((p) => p.stage === 'Swiss' && p.slot === '3-0').map((p) => p.pick);
-// "Ruler (GEN, ADC)" -> player, team, role
-const mvp = /^(.+?)\s*\(([A-Z0-9]+),\s*([A-Za-z]+)\)/.exec(o.finals_mvp ?? '');
-const quick: { k: string; teams: string[]; text: string; role?: string }[] = [
-  { k: 'Play-In winner', teams: piw ? [piw] : [], text: piw ? `${teamName(piw)}, ${pct(piwP)}` : 'UNKNOWN' },
-  { k: 'Swiss 3-0', teams: sw30, text: sw30.length ? sw30.map(teamName).join(' and ') : 'UNKNOWN' },
-  { k: 'Finals MVP', teams: mvp ? [mvp[2]] : [], text: mvp ? mvp[1] : (o.finals_mvp ? o.finals_mvp.split(' (')[0] : 'UNKNOWN'), role: mvp?.[3] },
-];
+const links = ['playground', 'teams', 'players'].map((id) => NAV.find((n) => n.id === id)!);
 const ls = lockStage();
 const sealed = (o.baseline_created ?? '').replace(/(\d{2}:\d{2}):\d{2}/, '$1') || 'UNKNOWN';
 const foot = `${stageLine()}. Baseline sealed ${sealed}. Data: gol.gg, lolesports.com, official patch notes. Times in NZDT. Exported ${o.exported_nz ?? 'UNKNOWN'}.`;
 ---
 <Base title="Home" active="home" footer={{ left: foot }}>
-  <LiveNow />
-  <header class="hero">
-    <span class="eyebrow">The prophecy for Worlds 2026</span>
-    <h1 class="orb">The orb favours {champName}</h1>
-    <p class="pro-line">{line1}</p>
-  </header>
-  <section class="cols home">
+  <TodayBand />
+  <section class="home">
     <div class="stack">
-      <div class="prophecy">
-        <div class="panel pro-stat">
-          <span class="disc pro-disc" style="--s:116px">{champ && <Logo code={champ} size={70} alt={champName} />}</span>
-          <div class="pro-p">
-            <span class="big gold pro-pct">{pct(cp, 1)}</span>
-            <span class="muted2">to win Worlds</span>
-          </div>
-          <dl class="pro-kv">
-            <div><dt>Likeliest final</dt><dd>{finalPair}</dd></div>
-            <div><dt>Likeliest spoiler</dt><dd>{spoiler}</dd></div>
-            <div><dt>Final</dt><dd>{finalWhere}</dd></div>
-          </dl>
+      <header class="hero">
+        <span class="eyebrow">The prophecy for Worlds 2026</span>
+        <h1 class="orb">The orb favours {champName}</h1>
+        <p class="pro-line">{line1}</p>
+      </header>
+      <div class="pro-stat">
+        <span class="disc pro-disc" style="--s:104px">{champ && <Logo code={champ} size={64} alt={champName} />}</span>
+        <div class="pro-p">
+          <span class="big gold pro-pct">{pct(cp, 1)}</span>
+          <span class="muted2">to win Worlds{isLive ? ', live' : ''}</span>
+          {sealLine && <span class="caption">{sealLine}</span>}
         </div>
-        <p class="pro-phone">Likeliest final: {finalPair}. Likeliest spoiler: {sp ? teamName(sp.loser) : 'UNKNOWN'}.</p>
-        {closing && <p class="pro-close">{closing}</p>}
       </div>
-      <TitleRace />
+      {closing && <p class="pro-close">{closing}</p>}
+      <TitleRace top={8} />
+      {finalLine && <p class="caption">{finalLine}</p>}
     </div>
     <div class="stack side">
+      <section class="panel flush msf" aria-label="The model so far">
+        <div class="panel-head"><h3>The model so far</h3></div>
+        <div class="panel-sec">
+          {sofar.length ? (
+            <dl class="msf-grid">
+              {sofar.map((x) => <div><dt>{x.k}</dt><dd class="big">{x.v}</dd>{x.sub && <dd class="caption">{x.sub}</dd>}</div>)}
+            </dl>
+          ) : <p class="caption">No series finished yet.</p>}
+        </div>
+        <a class="link-row" href={url('scorecard/')}>Scorecard<span class="msf-arrow" aria-hidden="true">→</span></a>
+      </section>
       {ls && <PickemsPanel stage={ls} />}
       <div class="callout">
         <span class="eyebrow">Where the orb is clouded</span>
         <p class="risk-short">{riskShort}</p>
         <p class="risk-watch muted2">{riskWatch}</p>
       </div>
-      <div class="quick">
-        <span class="eyebrow">Quick picks</span>
-        <div class="rows">
-          {quick.map((q) => <div class="quick-row"><span class="muted2">{q.k}</span><span class="qv">{q.teams.map((c) => <Logo code={c} size={24} />)}<span>{q.text}</span></span></div>)}
-        </div>
-      </div>
     </div>
   </section>
+  <nav class="go" aria-label="More to explore">
+    {links.map((n) => (
+      <a class="card go-card" href={url(n.path)}>
+        <span class="go-ico" set:html={icon(n.id)} />
+        <span class="go-t"><h3>{n.label}</h3><span class="caption">{n.desc}</span></span>
+      </a>
+    ))}
+  </nav>
 </Base>
 <style>
-  /* two independent stacks: neither column waits on the other's height */
-  .home { align-items: start; }
-  .stack { display: flex; flex-direction: column; gap: var(--space-xl); min-width: 0; }
-  /* the one display moment: the headline, then the champion % as the single gold number */
-  .hero { display: flex; flex-direction: column; gap: var(--space-xs); margin-bottom: calc(-1 * var(--space-sm)); }
+  /* Today full width above; then two independent stacks, the left (prophecy, title race) wider */
+  .home { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--space-xl) var(--space-2xl); align-items: start; }
+  .stack { display: flex; flex-direction: column; gap: var(--space-md); min-width: 0; }
+  .side { gap: var(--space-xl); }
+  /* the one display moment: the headline, then the favourite's live title % as the single gold number */
+  .hero { display: flex; flex-direction: column; gap: var(--space-xs); }
   .orb { font-size: var(--fs-hero); line-height: 1; }
   .pro-line { font-size: var(--fs-xl); line-height: 1.35; color: var(--fg2); text-wrap: pretty; }
-  .prophecy { display: flex; flex-direction: column; gap: var(--space-md); }
-  .pro-stat { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-md) var(--space-lg); }
-  .pro-p { display: flex; flex-direction: column; gap: var(--space-2xs); }
+  .pro-stat { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm) var(--space-lg); }
+  .pro-p { display: flex; flex-direction: column; gap: var(--space-3xs); }
+  .pro-pct { margin-bottom: var(--space-3xs); }
   .pro-pct { font-size: var(--fs-hero); }
   .pro-p .muted2 { font-size: var(--fs-md); }
-  /* key facts under the stat: label left, value right, shared baseline */
-  .pro-kv {
-    flex: 1 1 100%; margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-xs) var(--space-lg);
-    align-items: baseline; padding-top: var(--space-md); border-top: 1px solid var(--line-strong);
-  }
-  .pro-kv > div { display: contents; }
-  .pro-kv dt { font-size: var(--fs-sm); color: var(--muted); }
-  .pro-kv dd { margin: 0; font-size: var(--fs-lg); min-width: 0; }
-  .pro-phone { display: none; }
-  .pro-close { font-size: var(--fs-lg); line-height: 1.5; color: var(--fg2); max-width: 60ch; text-wrap: pretty; }
+  .pro-close { font-size: var(--fs-lg); line-height: 1.5; color: var(--fg2); max-width: 60ch; text-wrap: pretty; margin-bottom: var(--space-sm); }
+
+  .msf-grid { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: var(--space-sm) var(--space-md); }
+  .msf-grid > div { display: flex; flex-direction: column; gap: var(--space-3xs); min-width: 0; }
+  .msf-grid dt { font-size: var(--fs-sm); color: var(--muted); }
+  .msf-grid dd { margin: 0; }
+  .msf-grid dd.big { font-size: var(--fs-2xl); }
+  .msf-arrow { font-size: var(--fs-lg); line-height: 1; }
 
   .risk-short { font-size: var(--fs-lg); line-height: 1.45; text-wrap: pretty; }
   .risk-watch { text-wrap: pretty; }
-  .quick { display: flex; flex-direction: column; gap: var(--space-2xs); }
-  .quick .rows > .quick-row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-sm); }
-  .quick-row > span:last-child { text-align: right; }
-  .qv { display: inline-flex; align-items: center; justify-content: flex-end; gap: var(--space-2xs); flex-wrap: wrap; }
 
+  /* links on: icon, title, one line */
+  .go { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-sm); }
+  .go-card { flex-direction: row; align-items: center; gap: var(--space-sm); padding: var(--space-sm) var(--space-md); }
+  .go-ico { display: inline-flex; color: var(--muted2); flex: none; }
+  .go-card:hover .go-ico { color: var(--gold); }
+  .go-t { display: flex; flex-direction: column; gap: var(--space-3xs); min-width: 0; }
+  .go-t h3 { font-size: var(--fs-lg); }
+
+  @media (max-width: 900px) {
+    .home { grid-template-columns: minmax(0, 1fr); }
+  }
   @media (max-width: 640px) {
-    /* phone: one column, Pick'Ems first */
-    .home { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-lg); }
-    .stack { display: contents; }
-    .home :global(.pk) { order: -1; }
-    .hero { gap: var(--space-2xs); margin-bottom: 0; }
-    .prophecy { gap: var(--space-xs); }
-    .pro-line, .pro-kv, .pro-close { display: none; }
+    .home, .side { gap: var(--space-lg); }
+    .stack { gap: var(--space-sm); }
+    .hero { gap: var(--space-2xs); }
+    .pro-line, .pro-close { display: none; }
     .pro-stat { flex-wrap: nowrap; gap: var(--space-sm); }
     .pro-disc { width: 52px; height: 52px; }
     .pro-disc :global(.logo) { width: 44px; height: 44px; }
-    .pro-p { gap: var(--space-3xs); }
-    .pro-phone { display: block; line-height: 1.5; color: var(--fg2); }
     .risk-short { font-size: var(--fs-md); }
+    .go { grid-template-columns: minmax(0, 1fr); gap: var(--space-xs); }
+    .go-card { padding: var(--space-xs) var(--space-sm); }
   }
 </style>

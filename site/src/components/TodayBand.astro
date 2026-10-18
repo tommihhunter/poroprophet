@@ -1,0 +1,185 @@
+---
+/* Home's lead: every Worlds series whose NZDT start date is today ("Today, 19/10"), else the next day with games
+   ("Next up, 24/10"), else the last day played. Sources, joined by team pair:
+   - Play-In and Knockouts: the latest staged series (lib/stage.ts view, settled pairings only, as LiveNow);
+   - Swiss: the drawn rows in results() with the model's pair chance (lib/swiss.ts pairChance);
+   - Riot's schedule (data/dash/schedule.json): start time, live state and game wins; a Riot match we have no row for
+     still shows, with the pair chance.
+   Before the start: both chances (favourite first, --fg; the other --muted) and the time; live (Riot inProgress) in
+   green with the game score; finished winner first with our call ("Called it" / "Picked X, wrong"). Riot's state is
+   as of the last publish; for a series Riot had not started the browser clock moves the label (Starts in, Live now,
+   Result pending), the same rule as LiveNow. Build-time "today" is the NZDT date. */
+import Logo from './Logo.astro';
+import { results, schedule, type Result, type Sched } from '../lib/data';
+import { nzToday } from '../lib/grading';
+import { STAGES, resultFor, startNz, view } from '../lib/stage';
+import { pairChance } from '../lib/swiss';
+import { nzMs, riotRow } from '../lib/live';
+import { pct } from '../lib/format';
+import { url } from '../lib/url';
+
+type Game = { a: string; b: string; label: string; start: string | null; day: string; pa: number | null; pick: string | null; res: { w: string; wg: number; lg: number; riot: boolean } | null; live: [number, number] | null; href: string };
+const used = new Set<Sched>();
+const games: Game[] = [];
+const ymd = (d: string) => d.split('/').reverse().join('');
+const hub = (phase: string) => url(`${/swiss/i.test(phase) ? 'swiss' : /play/i.test(phase) ? 'play-in' : 'knockouts'}/`);
+
+function add(a: string, b: string, bo: number | null, label: string, start: string | null, day: string | null, pa: number | null, pick: string | null, r: Result | undefined, rr: Sched | null) {
+  if (rr) used.add(rr);
+  const t = (rr?.start_nz ?? start ?? '').match(/\d\d\/\d\d\/\d{4} \d\d:\d\d/)?.[0] ?? null;
+  const d = t?.slice(0, 10) ?? day;
+  if (!d) return;
+  const flip = !!rr && rr.team_a !== a;
+  const wa = rr ? (flip ? rr.wins_b : rr.wins_a) : 0, wb = rr ? (flip ? rr.wins_a : rr.wins_b) : 0;
+  const res = r?.winner
+    ? { w: r.winner, wg: Math.max(Number(r.score_a), Number(r.score_b)), lg: Math.min(Number(r.score_a), Number(r.score_b)), riot: false }
+    : rr?.state === 'completed' && wa !== wb ? { w: wa > wb ? a : b, wg: Math.max(wa, wb), lg: Math.min(wa, wb), riot: true } : null;
+  games.push({ a, b, label: bo ? `${label}, Bo${bo}` : label, start: t, day: d, pa, pick, res, live: !res && rr?.state === 'inProgress' ? [wa, wb] : null, href: hub(label) });
+}
+
+// Play-In and Knockouts: settled pairings of the latest staged run (knockout ties only from a real knockouts run)
+for (const st of STAGES.filter((x) => x.phase !== 'Swiss')) {
+  for (const s of view(st, 'latest').rows) {
+    if (s.actual || !s.team_a || !s.team_b || s.team_b === 'TBD') continue;
+    if (st.phase === 'Knockouts' && s.set !== 'knockouts') continue;
+    if (!s.settled && /predicted pairing|assumed/i.test(s.stage)) continue;
+    const when = startNz(s), at = nzMs(when);
+    add(s.team_a, s.team_b, s.bo, s.stage.replace(/\s*\(.*\)/, ''), when, null, s.p_series_a, s.winner || null, resultFor(s), at == null ? null : riotRow(s.team_a, s.team_b, at));
+  }
+}
+// Swiss: drawn rows. `date` is the US (Allen, Texas) date; the NZ day is the next one (CDT is 18 hours behind NZDT and
+// play starts after 06:00 NZDT), used only until Riot's schedule gives the start time.
+for (const r of results().filter((x) => x.phase === 'Swiss' && x.kind === 'series' && x.team_a && x.team_b)) {
+  const a = r.team_a!, b = r.team_b!, bo = Number(r.bo) || 1;
+  const us = /(\d\d)\/(\d\d)\/(\d{4})/.exec(r.date ?? '');
+  const usMs = us ? Date.UTC(+us[3], +us[2] - 1, +us[1]) : null;
+  const day = usMs == null ? null : new Date(usMs + 864e5).toISOString().slice(0, 10).split('-').reverse().join('/');
+  const pa = pairChance(a, b, bo);
+  add(a, b, bo, r.stage ?? 'Swiss', r.start_nz ?? null, day, pa, pa == null ? null : pa >= 0.5 ? a : b, r, usMs == null ? null : riotRow(a, b, usMs + 864e5, 3 * 864e5));
+}
+// Riot matches we have no row for yet (e.g. a Swiss round Riot drew before our results file has it)
+for (const rr of schedule().filter((x) => !used.has(x) && x.team_a !== 'TBD' && x.team_b !== 'TBD')) {
+  const pa = pairChance(rr.team_a, rr.team_b, rr.bo ?? 1);
+  add(rr.team_a, rr.team_b, rr.bo, rr.block, rr.start_nz, null, pa, pa == null ? null : pa >= 0.5 ? rr.team_a : rr.team_b, undefined, rr);
+}
+
+const today = nzToday();
+const days = [...new Set(games.map((g) => g.day))].sort((x, y) => ymd(x).localeCompare(ymd(y)));
+const day = days.includes(today) ? today : days.find((d) => ymd(d) > ymd(today)) ?? days.at(-1);
+const head = !day ? '' : `${day === today ? 'Today' : ymd(day) > ymd(today) ? 'Next up' : 'Last played'}, ${day.slice(0, 5)}`;
+const list = games.filter((g) => g.day === day).sort((x, y) => (x.start ?? '99').localeCompare(y.start ?? '99'));
+const fetched = schedule()[0]?.fetched_nz;
+const iso = (t: string | null) => { const ms = t ? nzMs(t) : null; return ms == null ? undefined : new Date(ms).toISOString(); };
+
+const cards = list.map((g) => {
+  const pb = g.pa == null ? null : 1 - g.pa;
+  // order: winner first once played, else the favourite first
+  const first = g.res ? g.res.w : g.pick ?? g.a;
+  const aFirst = first === g.a;
+  const sides = [{ c: g.a, p: g.pa, n: g.live?.[0] }, { c: g.b, p: pb, n: g.live?.[1] }];
+  if (!aFirst) sides.reverse();
+  const rows = sides.map((x, i) => ({
+    code: x.c,
+    v: g.res ? String(i === 0 ? g.res.wg : g.res.lg) : g.live ? String(x.n) : pct(x.p),
+    lead: g.live ? x.n! >= sides[1 - i].n! : i === 0,
+  }));
+  const hit = g.res && g.pick ? g.res.w === g.pick : null;
+  const note = !g.res ? null : hit == null ? { t: 'No call', c: 'muted' } : hit ? { t: 'Called it', c: 'teal' } : { t: `Picked ${g.pick}, wrong`, c: 'risk' };
+  const state = g.res ? 'done' : g.live ? 'live' : undefined;
+  const when = g.res ? 'Finished' : g.live ? 'Live now' : g.start ? `${g.start.slice(11)} NZDT` : 'Time UNKNOWN';
+  return { g, rows, note, state, when };
+});
+---
+{list.length > 0 && (
+  <section class="tb" aria-label={head}>
+    <div class="section-head">
+      <h2>{head}</h2>
+      <span>Times in NZDT{fetched && `. Match state from Riot at ${fetched.replace(/\s*NZDT$/, '')}`}</span>
+    </div>
+    <ul class:list={['tb-list', { many: list.length > 2 }]} style={`--cols:${list.length <= 4 ? list.length : Math.ceil(list.length / 2)}`}>
+      {cards.map(({ g, rows, note, state, when }) => (
+        <li>
+          <a class="card tg" href={g.href} data-phase={state} data-start={state ? undefined : iso(g.start)}>
+            <span class="tg-meta">
+              <span class="tg-when"><i class="dot" aria-hidden="true"></i><span data-state>{when}</span></span>
+              <span class="tg-label">{g.label}</span>
+            </span>
+            {rows.map((x, i) => (
+              <span class:list={['tg-team', i ? 'b' : 'a', { lead: x.lead }]}>
+                <Logo code={x.code} size={28} />
+                <span class="code">{x.code}</span>
+                <span class="big tg-v">{x.v}</span>
+              </span>
+            ))}
+            {note && <span class="tg-note"><span class={note.c}>{note.t}</span>{g.res?.riot && <span class="muted">, official stats to follow</span>}</span>}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+<script is:inline>
+  // Cards Riot had not started at the last publish: the label follows the clock (LiveNow's rule). Every 30 s, no network.
+  (() => {
+    const fmt = (ms) => { const m = Math.round(ms / 60000); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
+    const tick = () => document.querySelectorAll('.tb [data-start]').forEach((el) => {
+      const d = Date.parse(el.dataset.start) - Date.now();
+      if (d > 0 && d >= 36 * 3600e3) return;
+      const st = el.querySelector('[data-state]');
+      const state = d > 0 ? 'soon' : d > -5 * 3600e3 ? 'live' : 'pending';
+      el.dataset.phase = state;
+      st.textContent = state === 'soon' ? `Starts in ${fmt(d)}` : state === 'live' ? 'Live now' : 'Result pending';
+    });
+    tick(); setInterval(tick, 30000);
+  })();
+</script>
+<style>
+  .tb { display: flex; flex-direction: column; gap: var(--space-sm); container-type: inline-size; }
+  .tb-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-xs); }
+  .tb-list > li { display: flex; min-width: 0; }
+
+  /* phone: a compact row per game, when and round on top, then team v team facing each other, the note under them */
+  .tg {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'meta meta' 'a b' 'note note';
+    align-items: center; gap: var(--space-3xs) var(--space-sm); padding: var(--space-xs) var(--space-sm);
+  }
+  .tg-meta { grid-area: meta; display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-2xs); min-width: 0; font-size: var(--fs-sm); color: var(--muted); line-height: 1.3; }
+  .tg-when { display: inline-flex; align-items: center; gap: var(--space-2xs); font-weight: 600; color: var(--fg2); }
+  .tg-label { font-size: var(--fs-xs); }
+  .dot { display: none; width: 8px; height: 8px; border-radius: 50%; background: var(--live); flex: none; }
+  .tg-team { display: flex; align-items: center; gap: var(--space-2xs); min-width: 0; color: var(--muted); }
+  .tg-team.a { grid-area: a; }
+  .tg-team.b { grid-area: b; flex-direction: row-reverse; }
+  .tg-team .code { font-size: var(--fs-lg); white-space: nowrap; }
+  .tg-v { font-size: var(--fs-xl); white-space: nowrap; }
+  .tg-team.a .tg-v { margin-left: auto; }
+  .tg-team.b .tg-v { margin-right: auto; }
+  .tg-team.lead { color: var(--fg); }
+  .tg-note { grid-area: note; font-size: var(--fs-sm); font-weight: 600; padding-top: var(--space-3xs); }
+  .tg-note .muted { font-weight: 400; }
+
+  /* live: green border, dot and label, as LiveNow */
+  .tg[data-phase="live"] { border-color: var(--live); box-shadow: 0 0 0 1px var(--live); }
+  .tg[data-phase="live"] .tg-when { color: var(--live); }
+  .tg[data-phase="live"] .dot { display: inline-block; box-shadow: 0 0 8px var(--live); animation: pulse 1.6s ease-in-out infinite; }
+  .tg[data-phase="done"] .tg-when, .tg[data-phase="pending"] .tg-when { color: var(--muted); }
+  @keyframes pulse { 50% { opacity: 0.3; } }
+
+  @container (min-width: 600px) {
+    .tb-list { gap: var(--space-sm); }
+    /* one or two games: a wide row each, side by side */
+    .tb-list:not(.many) { grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); }
+    .tb-list:not(.many) .tg { grid-template-columns: 8rem minmax(0, 13rem) minmax(0, 13rem) minmax(0, 1fr); grid-template-areas: 'meta a b note'; gap: 0 var(--space-md); padding: var(--space-sm) var(--space-md); }
+    .tb-list:not(.many) .tg-meta { flex-direction: column; justify-content: center; align-items: flex-start; gap: var(--space-3xs); }
+    .tb-list:not(.many) .tg-note { padding: 0 0 0 var(--space-sm); text-align: right; }
+    /* three or more: equal tiles, two rows for a full Swiss round */
+    .many { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .many .tg { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'meta' 'a' 'b' 'note'; gap: var(--space-2xs); padding: var(--space-sm) var(--space-md); align-content: start; }
+    .many .tg-team.b { flex-direction: row; }
+    .many .tg-team.b .tg-v { margin: 0 0 0 auto; }
+    .many .tg-note { padding-top: var(--space-2xs); border-top: 1px solid var(--line); }
+  }
+  @container (min-width: 960px) {
+    .many { grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); }
+  }
+</style>

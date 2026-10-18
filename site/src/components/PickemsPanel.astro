@@ -2,11 +2,10 @@
 /* Our Pick'Ems for a stage, read in order: what the picks are and how they score, then one card per pick type
    (Go 3-0, Go 0-3, Advance) whose rows show the team and the chance that pick comes true, next to a bar,
    then how close the call was ("Also close": the best teams we did not pick). Swiss page = full; Home = compact
-   (same cards, smaller, plus status and a link). Any other stage lists its slots as rows. Renders nothing when
+   (same cards, smaller, plus the preliminary note and a link; the latest result is Home's Today band). Any other stage lists its slots as rows. Renders nothing when
    the stage has no Pick'Ems rows yet. */
 import Logo from './Logo.astro';
 import { pickems, teamName } from '../lib/data';
-import { resultRows } from '../lib/grading';
 import { nextLock } from '../lib/nav';
 import { STAGES, drawPassed, view } from '../lib/stage';
 import { pct } from '../lib/format';
@@ -34,14 +33,6 @@ const drawn = drawPassed().passed;
 // Preliminary while the Swiss rows are not from a Swiss (or later) staged run.
 const prelim = stage === 'swiss' && view(st, 'latest').swissSet === 'baseline';
 const prelimLine = prelim ? (drawn ? 'Preliminary: re-run after the round 1 draw.' : `Preliminary until the round 1 draw${draw ? ` on ${draw} (US time)` : ''}, then re-run.`) : '';
-// ponytail: "latest" = last finished row in results.json order (the file is appended as series finish); sort by start_nz if that changes.
-const last = resultRows().at(-1);
-const lastLine = last ? (() => {
-  const [a, b] = last.score.split('-').map(Number);
-  const loser = last.winner === last.team_a ? last.team_b : last.team_a;
-  const call = last.hit == null ? 'no baseline call' : `winner called ${last.hit ? 'right' : 'wrong'}`;
-  return `Latest ${last.phase} result: ${last.winner} beat ${loser} ${Math.max(a, b)}-${Math.min(a, b)}, ${call}.`;
-})() : null;
 const title = `${st.phase} Pick'Ems`;
 const pts = stage === 'swiss' ? 'Each correct advancer scores 10 points, with bonuses for the exact record.' : '';
 ---
@@ -88,12 +79,7 @@ const pts = stage === 'swiss' ? 'Each correct advancer scores 10 points, with bo
       </div>
     )}
     {full && prelimLine && <p class="caption">{prelimLine}</p>}
-    {!full && (prelimLine || lastLine) && (
-      <div class="panel-sec pk-status caption">
-        {prelimLine && <span>{prelimLine}</span>}
-        {lastLine && <span>{lastLine}</span>}
-      </div>
-    )}
+    {!full && prelimLine && <div class="panel-sec pk-status caption"><span>{prelimLine}</span></div>}
     {!full && <a class="link-row" href={url(`${stage}/`)}>All {st.phase} picks<span class="pk-arrow" aria-hidden="true">→</span></a>}
   </section>
 )}

@@ -2,11 +2,13 @@
 /* How far teams go: one nested bar per team (Knockouts, Semis, Final, Champion, each drawn from 0, so the shorter,
    stronger segment sits inside the longer one), champion % as the row's number. Source: live() when it has rows, else
    the frozen ratings(). Knocked-out teams are left out: absent from live(), out of the Swiss field once the Play-In
-   winner is known (lib/swiss.ts SWISS_POOLS), or eliminated in the Swiss. Top 10, the rest behind a disclosure. */
+   winner is known (lib/swiss.ts SWISS_POOLS), or eliminated in the Swiss. Top `top` (default 10), the rest behind a disclosure. */
 import Logo from './Logo.astro';
 import { live, ratings } from '../lib/data';
 import { SWISS_POOLS, swissState } from '../lib/swiss';
 import { pct, pct1 } from '../lib/format';
+interface Props { top?: number }
+const { top: N = 10 } = Astro.props;
 
 const lv = live();
 const isLive = lv.length > 0;
@@ -17,7 +19,7 @@ const field = pools.includes('Play-In winner') ? null : new Set(pools);
 const out = new Set(swissState().eliminated.map((e) => e.team));
 const teams = rows.filter((r) => (!field || field.has(r.code)) && !out.has(r.code))
   .sort((a, b) => b.p[3] - a.p[3] || b.p[0] - a.p[0]);
-const top = teams.slice(0, 10), rest = teams.slice(10);
+const top = teams.slice(0, N), rest = teams.slice(N);
 const LEG = ['Knockouts', 'Semis', 'Final', 'Champion'];
 const when = isLive ? lv[0]?.generated_nz : null;
 const label = isLive ? `Live${when ? `, updated ${when}` : ''}` : 'Frozen baseline';
@@ -34,10 +36,10 @@ const aria = (p: number[]) => LEG.map((k, i) => `${k} ${pct(p[i])}`).join(', ');
     return list.length > 0 && (
       <W class={j ? 'tr-more' : undefined}>
         {j > 0 && <summary>Show all {teams.length} teams</summary>}
-        <ol class="tr-rows" start={j * 10 + 1}>
+        <ol class="tr-rows" start={j * N + 1}>
           {list.map((t, i) => (
             <li class="tr-row" title={aria(t.p)}>
-              <span class="dim tr-rank">{j * 10 + i + 1}</span>
+              <span class="dim tr-rank">{j * N + i + 1}</span>
               <span class="code tr-code"><Logo code={t.code} size={24} />{t.code}</span>
               <span class="tr-bar" role="img" aria-label={aria(t.p)}>
                 {t.p.map((p, k) => <i class={`s${k}`} style={`width:${(Math.min(1, Math.max(0, p || 0)) * 100).toFixed(1)}%`}></i>)}

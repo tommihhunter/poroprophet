@@ -66,6 +66,25 @@ def check_more_sheet(page, tag, problems):
         problems.append(f"{tag}: More sheet opened {opened}, closed {closed}, focus {focus}")
 
 
+def check_home(page, tag, problems):
+    """Home: the Today (or Next up) band leads with at least one game card, one gold hero number, the model-so-far
+    panel, and no Quick picks."""
+    head = page.text_content(".tb h2") if page.locator(".tb h2").count() else None
+    cards = page.locator(".tb .tg").count()
+    gold = page.locator("main .big.gold").count()
+    msf = page.locator(".msf").count()
+    quick = "quick picks" in page.inner_text("body").lower()
+    print(f"{tag}: band {head!r} with {cards} cards, {gold} gold big numbers, model so far {msf}, quick picks {quick}")
+    if not head or not re.match(r"^(Today|Next up|Last played), \d\d/\d\d$", head.strip()) or cards < 1:
+        problems.append(f"{tag}: Today band {head!r} with {cards} game cards")
+    if gold != 1:
+        problems.append(f"{tag}: {gold} gold hero numbers, expected 1")
+    if msf != 1:
+        problems.append(f"{tag}: model-so-far panel missing")
+    if quick:
+        problems.append(f"{tag}: Quick picks still on Home")
+
+
 VISIBLE_CARDS = "[...document.querySelectorAll('#teams-grid > a')].filter(c => c.offsetParent !== null)"
 
 
@@ -251,6 +270,8 @@ def main():
                         check_players_filter(page, tag, problems)
                     if pg == "play-in/" and w == 1280:
                         check_play_in(page, tag, problems)
+                    if pg == "" and w in (1280, 390):
+                        check_home(page, tag, problems)
                     if pg == "" and w == 390:
                         check_more_sheet(page, tag, problems)
                     page.close()
