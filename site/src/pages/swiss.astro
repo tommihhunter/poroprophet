@@ -45,7 +45,6 @@ const footLeft = `${staged ? `Staged ${setLabel(v.swissSet)}` : 'Frozen baseline
   <PickemsPanel stage="swiss" full />
   <RecordTable rows={rows} records={swissRecords()} caption={caption} />
   <SwissPools />
-  <script is:inline src={url('js/follow.js')} defer></script>
 </Base>
 <style>
   /* the h1 needs more than the shared 70ch intro width to stay on one line at desktop widths; the lede keeps its own 60ch */

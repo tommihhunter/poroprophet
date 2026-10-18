@@ -1,16 +1,18 @@
 ---
 /* Swiss bracket by record (lib/swiss.ts): five round columns, each a stack of record groups, then Qualified and
    Eliminated. A match card shows both teams' chances before it is played and the score after (winner first).
-   Groups not drawn yet list the teams known to be on that record. Every team mark carries data-team for
-   public/js/follow.js. Desktop: columns side by side (scrolls inside .scroll if narrow); phone: rounds stacked. */
+   Groups not drawn yet list the teams known to be on that record. Every team mark links to its team page. Desktop: columns side by side (scrolls inside .scroll if narrow); phone: rounds stacked. */
 import Logo from './Logo.astro';
 import { swissState } from '../lib/swiss';
 import { pct } from '../lib/format';
+import { teamSlug } from '../lib/data';
+import { url } from '../lib/url';
+const team = (t: string) => url(`teams/${teamSlug(t)}/`);
 const { rounds, qualified, eliminated } = swissState();
 const drawnGames = rounds[0].groups[0].matches.length;
 const pending = (round: number, games: number) => `${games} ${games === 1 ? 'game' : 'games'}, ${round === 1 ? 'draw pending' : `drawn after round ${round - 1}`}`;
 ---
-<section class="section sb" data-follow-scope aria-label="Swiss bracket by record">
+<section class="section sb" aria-label="Swiss bracket by record">
   <div class="section-head">
     <h2>Swiss bracket</h2>
     <span>{drawnGames ? "The model's chance for each match: one game in a Bo1, the series in a Bo3." : 'Round 1 is not drawn yet.'}</span>
@@ -34,9 +36,9 @@ const pending = (round: number, games: number) => `${games} ${games === 1 ? 'gam
                     return (
                       <div class:list={['sb-match', { played: !!m.winner }]} data-bo={m.bo} aria-label={label}>
                         {rows.map(([t, v, lead]) => (
-                          <span class:list={['sb-team', { lead }]} data-team={t}>
+                          <a class:list={['sb-team', { lead }]} href={team(t as string)}>
                             <Logo code={t as string} size={22} /><span class="code">{t}</span><span class="sb-v">{v}</span>
-                          </span>
+                          </a>
                         ))}
                       </div>
                     );
@@ -47,7 +49,7 @@ const pending = (round: number, games: number) => `${games} ${games === 1 ? 'gam
                 <div class="sb-pending">
                   <span class="caption">{pending(r.round, g.games - g.matches.length)}</span>
                   {g.teams.length > 0 && r.round > 1 && (
-                    <span class="sb-chips">{g.teams.map((t) => <span class="sb-team chip-team" data-team={t}><Logo code={t} size={18} /><span class="code">{t}</span></span>)}</span>
+                    <span class="sb-chips">{g.teams.map((t) => <a class="sb-team chip-team" href={team(t)}><Logo code={t} size={18} /><span class="code">{t}</span></a>)}</span>
                   )}
                 </div>
               )}
@@ -59,14 +61,13 @@ const pending = (round: number, games: number) => `${games} ${games === 1 ? 'gam
         <section class="sb-col sb-out" aria-label={title as string}>
           <h3 class:list={['sb-head', tone]}>{title}</h3>
           {(list as typeof qualified).length
-            ? <div class="sb-list">{(list as typeof qualified).map((x) => <span class="sb-team" data-team={x.team}><Logo code={x.team} size={22} /><span class="code">{x.team}</span><span class="sb-v">{x.record}</span></span>)}</div>
+            ? <div class="sb-list">{(list as typeof qualified).map((x) => <a class="sb-team" href={team(x.team)}><Logo code={x.team} size={22} /><span class="code">{x.team}</span><span class="sb-v">{x.record}</span></a>)}</div>
             : <p class="caption">None yet</p>}
         </section>
       ))}
     </div>
   </div>
   <slot />
-  <p class="caption" data-follow-hint hidden>Hover or tap a team to follow it through the bracket; tap it again or press Escape to clear.</p>
 </section>
 <style>
   /* 5 rounds then 2 narrower outcome columns: about 1200px at the smallest, so 1280 and up show it without scrolling */
@@ -90,11 +91,8 @@ const pending = (round: number, games: number) => `${games} ${games === 1 ? 'gam
   .chip-team { padding: 0 var(--space-2xs) 0 0; color: var(--fg2); font-size: var(--fs-sm); }
   .sb-list { display: flex; flex-direction: column; gap: var(--space-3xs); }
   .sb-out .sb-team { color: var(--fg); }
-  /* follow a team (public/js/follow.js): the followed team's marks light up, every other mark steps back */
-  :global(.sb-team[tabindex]) { cursor: pointer; }
-  .sb-team:global(.is-follow) { background: var(--line-head); color: var(--fg); }
-  :global(:root[data-following]) .sb-team:not(:global(.is-follow)) { opacity: 0.45; }
-  .sb-team:focus-visible { outline-offset: 0; }
+  /* team marks are plain links to the team page: the code turns gold on hover, nothing else moves */
+  a.sb-team:hover .code { color: var(--gold); }
 
   @media (max-width: 1100px) {
     /* rounds stacked, each round a block with its groups side by side */

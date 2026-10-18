@@ -151,8 +151,8 @@ def check_compare_pick(page, tag, problems):
 
 
 def check_swiss(browser, target, problems):
-    """Swiss at 1440: round 1 shows one .sb-match per round 1 row in data/dash/results.json, and hovering a team in
-    the bracket lights up every mark of that team (follow.js) and no other team's."""
+    """Swiss at 1440: round 1 shows one .sb-match per round 1 row in data/dash/results.json, and a team in the
+    bracket links to its team page."""
     dash = os.environ.get("W26_DASH") or os.path.join(ROOT, "data", "dash")
     with open(os.path.join(dash, "results.json"), encoding="utf-8") as fh:
         want = sum(1 for r in json.load(fh) if r.get("phase") == "Swiss" and r.get("kind") == "series" and r.get("round") == 1)
@@ -163,13 +163,12 @@ def check_swiss(browser, target, problems):
     if got != want:
         problems.append(f"swiss @1440: round 1 shows {got} games, expected {want}")
     if want:
-        team = page.locator(".sb-match [data-team]").first.get_attribute("data-team")
-        page.locator(".sb-match [data-team]").first.hover()
-        lit = page.evaluate("[...document.querySelectorAll('.is-follow')].map(e => e.dataset.team)")
-        total = page.locator(f"[data-follow-scope] [data-team='{team}']").count()
-        print(f"swiss @1440: hover {team} lights {len(lit)} of {total} marks")
-        if set(lit) != {team} or len(lit) != total or total < 2:
-            problems.append(f"swiss @1440: hover {team} lit {lit}, expected all {total} {team} marks")
+        # team marks are plain links to the team page (no hover or select behaviour)
+        a = page.locator(".sb-match a.sb-team").first
+        code, href = a.locator(".code").inner_text().strip(), a.get_attribute("href") or ""
+        print(f"swiss @1440: {code} links to {href}")
+        if not href.endswith(f"teams/{code.lower()}/"):
+            problems.append(f"swiss @1440: {code} links to {href}, expected .../teams/{code.lower()}/")
     page.close()
 
 

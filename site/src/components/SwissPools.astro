@@ -1,11 +1,13 @@
 ---
 /* Swiss seed pools (lib/swiss.ts SWISS_POOLS): four compact columns and the round 1 pairing rule.
-   Team marks carry data-team for public/js/follow.js. */
+   Each team links to its team page. */
 import Logo from './Logo.astro';
 import { SWISS_POOLS } from '../lib/swiss';
+import { teamSlug } from '../lib/data';
+import { url } from '../lib/url';
 const pools = SWISS_POOLS();
 ---
-<section class="section sp" data-follow-scope aria-label="Swiss seed pools">
+<section class="section sp" aria-label="Swiss seed pools">
   <div class="section-head">
     <h2>Seed pools</h2>
     <span>Round 1 pairs pool 1 with pool 4 and pool 2 with pool 3, never two teams from the same region.</span>
@@ -16,9 +18,9 @@ const pools = SWISS_POOLS();
         <h3 class="sp-head">Pool {i + 1}</h3>
         <ul>
           {pool.map((t) => (
-            <li><span class="sp-team" data-team={t === 'Play-In winner' ? undefined : t}>
-              {t === 'Play-In winner' ? <span class="muted">Play-In winner</span> : <><Logo code={t} size={22} /><span class="code">{t}</span></>}
-            </span></li>
+            <li>{t === 'Play-In winner'
+              ? <span class="sp-team muted">Play-In winner</span>
+              : <a class="sp-team" href={url(`teams/${teamSlug(t)}/`)}><Logo code={t} size={22} /><span class="code">{t}</span></a>}</li>
           ))}
         </ul>
       </div>
@@ -32,9 +34,7 @@ const pools = SWISS_POOLS();
   ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3xs); }
   .sp-team { display: flex; align-items: center; gap: var(--space-2xs); padding: var(--space-3xs) var(--space-2xs); border-radius: var(--radius-bar); min-width: 0; }
   .sp-team .code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  /* follow a team: same look as the bracket marks */
-  :global(.sp-team[tabindex]) { cursor: pointer; }
-  .sp-team:global(.is-follow) { background: var(--line-head); }
-  :global(:root[data-following]) .sp-team[data-team]:not(:global(.is-follow)) { opacity: 0.45; }
+  a.sp-team { color: var(--fg); }
+  a.sp-team:hover .code { color: var(--gold); }
   @media (max-width: 640px) { .sp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); } }
 </style>
