@@ -2,60 +2,70 @@
 /* "Live now / Up next": the next open series (settled pairings, both teams' chances, our pick in gold) and the latest result.
    The site only rebuilds when a result lands, so the state is worked out in the browser from each start time:
    before the start "Starts in 2h 10m", from the start "Live", from 5 hours after it "Result pending" (a Bo5 rarely
-   runs past 4 hours). Built-in results always win: a played series never shows here. Renders nothing when no
-   series has a start time. Optional `phase` limits it to one stage. */
+   runs past 4 hours). Riot's state at the last publish (data/dash/schedule.json, lib/live.ts) overrides the clock: an
+   inProgress series shows "Live now" with the game score, a completed one leaves the cards and becomes the latest result
+   ("KC won 3-0 against MVK, official stats to follow") until our results row lands. Built-in results always win: a
+   played series never shows here. Renders nothing when no series has a start time. Optional `phase` limits it to one stage. */
 import Logo from './Logo.astro';
 import { results } from '../lib/data';
 import { resultFor } from '../lib/grading';
 import { STAGES, startNz, view } from '../lib/stage';
 import { pct } from '../lib/format';
 import { url } from '../lib/url';
+import { matchState, nzMs } from '../lib/live';
 interface Props { phase?: 'Play-In' | 'Swiss' | 'Knockouts' }
 const { phase } = Astro.props;
-// "17/10/2026 12:00" (NZDT, UTC+13) -> ISO UTC
-const iso = (nz: string) => {
-  const m = /(\d\d)\/(\d\d)\/(\d{4}) (\d\d):(\d\d)/.exec(nz || '');
-  return m ? new Date(Date.UTC(+m[3], +m[2] - 1, +m[1], +m[4] - 13, +m[5])).toISOString() : null;
-};
+const iso = (nz: string) => { const t = nzMs(nz); return t == null ? null : new Date(t).toISOString(); };
 const open = STAGES.filter((st) => !phase || st.phase === phase)
   .flatMap((st) => view(st, 'latest').rows.map((s) => ({ s, st })))
   .filter(({ s }) => !s.actual && s.team_a && s.team_b && !resultFor(s))
-  .map((x) => ({ ...x, when: startNz(x.s), at: iso(startNz(x.s)) }))
+  .map((x) => ({ ...x, when: startNz(x.s), at: iso(startNz(x.s)), rs: matchState(x.s) }))
   .filter((x) => x.at)
   .sort((a, b) => a.at!.localeCompare(b.at!));
 // only rows whose teams are known: Play-In rows settled by results or round 1; knockout ties only from a real
 // knockouts run (the baseline bracket is an assumed draw); never a row marked as an assumed pairing
-const known = open.filter(({ s, st }) => (st.phase !== 'Knockouts' || s.set === 'knockouts') && s.team_b !== 'TBD' && (s.settled || !/predicted pairing|assumed/i.test(s.stage))).slice(0, 3);
+const settled = open.filter(({ s, st }) => (st.phase !== 'Knockouts' || s.set === 'knockouts') && s.team_b !== 'TBD' && (s.settled || !/predicted pairing|assumed/i.test(s.stage)));
+// Riot says finished (and the game wins name a winner): not live any more, shown as the latest result instead
+const done = (x: (typeof settled)[number]) => x.rs?.state === 'completed' && x.rs.wins_a !== x.rs.wins_b;
+const known = settled.filter((x) => !done(x)).slice(0, 3);
+const riotLast = settled.filter(done).at(-1);
 const lastRes = results().filter((r) => r.winner && (!phase || r.phase === phase)).at(-1);
-const lastLine = lastRes ? `${lastRes.winner} beat ${lastRes.winner === lastRes.team_a ? lastRes.team_b : lastRes.team_a} ${Math.max(Number(lastRes.score_a), Number(lastRes.score_b))}-${Math.min(Number(lastRes.score_a), Number(lastRes.score_b))}` : '';
+const riotLine = riotLast && (() => {
+  const { s, rs } = riotLast; const aWon = rs!.wins_a > rs!.wins_b;
+  return `${aWon ? s.team_a : s.team_b} won ${Math.max(rs!.wins_a, rs!.wins_b)}-${Math.min(rs!.wins_a, rs!.wins_b)} against ${aWon ? s.team_b : s.team_a}`;
+})();
+const lastLine = riotLine || (lastRes ? `${lastRes.winner} beat ${lastRes.winner === lastRes.team_a ? lastRes.team_b : lastRes.team_a} ${Math.max(Number(lastRes.score_a), Number(lastRes.score_b))}-${Math.min(Number(lastRes.score_a), Number(lastRes.score_b))}` : '');
 const hub = (st: { id: string }) => url(`${st.id}/`);
 const short = (nz: string) => nz.replace(/^(\d\d\/\d\d)\/\d{4}/, '$1').replace(/\s*NZDT$/, '');
 ---
-{known.length > 0 && (
+{(known.length > 0 || riotLine) && (
   <section class="live" aria-label="Live now and up next" data-live>
-    {known.map(({ s, st, when, at }, i) => (
-      <a class:list={['lv', { lead: i === 0 }]} href={hub(st)} data-start={at}>
-        <span class="lv-state"><i class="dot" aria-hidden="true"></i><span data-state>Up next</span></span>
+    {known.map(({ s, st, when, at, rs }, i) => {
+      const live = rs?.state === 'inProgress';
+      return (
+      <a class:list={['lv', { lead: i === 0 }]} href={hub(st)} data-start={live ? undefined : at} data-phase={live ? 'live' : undefined}>
+        <span class="lv-state"><i class="dot" aria-hidden="true"></i><span data-state>{live ? 'Live now' : 'Up next'}</span></span>
         <span class="lv-teams">
           <Logo code={s.team_a} size={i === 0 ? 40 : 24} /><span class="code">{s.team_a}</span>
-          <span class="muted">v</span>
+          {live ? <span class="lv-score">{rs!.wins_a}-{rs!.wins_b}</span> : <span class="muted">v</span>}
           <span class="code">{s.team_b}</span><Logo code={s.team_b} size={i === 0 ? 40 : 24} />
         </span>
         <span class="lv-meta">
           <span class="caption">{s.stage.replace(/^Play-In /, '')}, {short(when)} NZDT</span>
           {s.winner && s.p_winner != null && (
             <span class="lv-pick">
-              {[s.team_a, s.team_b].map((c, j) => <>{j > 0 && <span class="muted"> · </span>}<span class:list={{ muted: c !== s.winner }}><span class="code">{c}</span> <span class:list={{ gold: c === s.winner }}>{pct(c === s.winner ? s.p_winner : 1 - s.p_winner!)}</span></span></>)}
+              {[s.team_a, s.team_b].map((c, j) => <>{j > 0 && <span class="muted"> · </span>}<span class:list={{ muted: c !== s.winner }}><span class="code">{c}</span> <span class:list={{ gold: c === s.winner }}>{pct(c === s.winner ? s.p_winner : 1 - s.p_winner!)}</span>{c === s.winner && <span class="lv-tag"> our pick</span>}</span></>)}
             </span>
           )}
         </span>
       </a>
-    ))}
-    {lastLine && <p class="caption lv-last">Latest result: {lastLine}.</p>}
+      );
+    })}
+    {lastLine && <p class="caption lv-last">Latest result: {lastLine}{riotLine && <span class="muted">, official stats to follow</span>}.</p>}
   </section>
 )}
 <script is:inline>
-  // Live state from the clock. Runs now and every 30 s; no network.
+  // Live state from the clock for cards Riot had not started at the last publish. Runs now and every 30 s; no network.
   (() => {
     const fmt = (ms) => { const m = Math.round(ms / 60000); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
     const tick = () => document.querySelectorAll('[data-live] [data-start]').forEach((el) => {
@@ -83,6 +93,8 @@ const short = (nz: string) => nz.replace(/^(\d\d\/\d\d)\/\d{4}/, '$1').replace(/
   .lead .lv-teams { font-size: var(--fs-2xl); gap: var(--space-sm); }
   .lv-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-3xs) var(--space-md); align-items: baseline; }
   .lv-pick { font-size: var(--fs-sm); color: var(--fg2); }
+  .lv-tag { font-size: var(--fs-xs); letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg2); }
+  .lv-score { font-family: var(--font-display); font-variant-numeric: tabular-nums; color: var(--live); }
   .lv-last { grid-column: 1 / -1; }
   @media (max-width: 900px) { .live { grid-template-columns: minmax(0, 1fr); } }
 </style>

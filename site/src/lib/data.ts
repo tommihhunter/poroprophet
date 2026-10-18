@@ -22,6 +22,8 @@ export type TeamBlock = { split: string; games: number; record: string; wr: numb
 export type Dossier = { code: string; name: string; region: string; seed: number; stage_start: string; headline: string; roster: string; coach: string; roster_change: string; domestic: string; international: string; trend: string; form: string; strengths: string; weaknesses: string; draft: string; signature: Player[]; signature_summer: Player[] | null; team_season: TeamBlock | null; team_summer: TeamBlock | null; flags: unknown; sources: string; report: { who: string; wins_by: string; loses_to: string; draft: string }; pool_depth: number };
 export type H2H = { a: string; b: string; date: string; tournament: string; stage: string; sa: number; sb: number; bo: number; patch: string | null; year: number };
 export type Matchup = { a: string; b: string; p_game: number; p_bo3: number; p_bo5: number };
+/** data/dash/schedule.json (model/live_state.py): Riot's state and game wins per Worlds match, as of the last publish. */
+export type Sched = { start_utc: string; start_nz: string; block: string; state: 'unstarted' | 'inProgress' | 'completed' | string; bo: number | null; team_a: string; team_b: string; wins_a: number; wins_b: number; fetched_nz: string };
 
 export const ratings = () => load<Rating>('ratings');
 export const live = () => load<Live>('live');
@@ -37,6 +39,7 @@ export const metaChamps = () => load<{ rank: number; champion: string; roles: st
 
 export const h2h = () => load<H2H>('h2h');
 export const matchups = () => load<Matchup>('matchups');
+export const schedule = () => load<Sched>('schedule');
 export const dcgi = () => load<Record<string, unknown>>('dcgi');
 export const overview = (): Record<string, string> => Object.fromEntries(load<{ key: string; value: string }>('overview').map((r) => [r.key, String(r.value)]));
 
