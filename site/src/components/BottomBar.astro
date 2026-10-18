@@ -1,5 +1,5 @@
 ---
-/* Phone bottom bar (< 640px), per design/lore/Phone Pages.dc.html: Home, Play-In, Swiss, Teams, More.
+/* Phone bottom bar (< 640px), per design/lore/Phone Pages.dc.html: Home, Play-In, Swiss, Teams, More (the rest of NAV, Playground included).
    A stroke icon (lib/icons.ts) over a --fs-xs label, gold when active. More is a <details> bottom sheet. */
 import { NAV } from '../lib/nav';
 import { url } from '../lib/url';
@@ -7,7 +7,7 @@ import { icon } from '../lib/icons';
 const { active } = Astro.props as { active: string };
 const pick = (id: string) => NAV.find((n) => n.id === id)!;
 const tabs = ['home', 'play-in', 'swiss', 'teams'].map(pick);
-const more = ['players', 'knockouts', 'scorecard', 'meta', 'demacia-cup'].map(pick);
+const more = ['players', 'knockouts', 'playground', 'scorecard', 'meta', 'demacia-cup'].map(pick);
 const moreOn = more.some((n) => n.id === active);
 ---
 <nav class="bbar" aria-label="Sections">

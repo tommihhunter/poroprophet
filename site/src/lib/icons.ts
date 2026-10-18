@@ -12,6 +12,7 @@ export const ICONS: Record<string, string> = {
   players: wrap('<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>'),
   scorecard: wrap('<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3.5h6v2.5H9z"/><path d="M8.5 12.5l2.2 2.2 4.8-5"/><path d="M8.5 17.5h7"/>'),
   meta: wrap('<path d="M12 3c1 4 3 5.5 6 6.5-3 1-5 2.5-6 6.5-1-4-3-5.5-6-6.5 3-1 5-2.5 6-6.5z"/><path d="M19 15.5c.4 1.4 1.1 2.1 2.5 2.5-1.4.4-2.1 1.1-2.5 2.5-.4-1.4-1.1-2.1-2.5-2.5 1.4-.4 2.1-1.1 2.5-2.5z"/>'),
+  playground: wrap('<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.3" fill="currentColor" stroke="none"/><circle cx="15" cy="15" r="1.3" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1.3" fill="currentColor" stroke="none"/><circle cx="9" cy="15" r="1.3" fill="currentColor" stroke="none"/>'),
   more: wrap('<circle cx="6" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.6" fill="currentColor" stroke="none"/>'),
 };
 

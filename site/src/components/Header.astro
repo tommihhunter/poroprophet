@@ -41,8 +41,13 @@ const own = !!lock && active === lock.stage.toLowerCase();
   .hnav a:active { color: var(--muted2); }
   .hnav a[aria-current="page"] { background: var(--gold); color: var(--bg); }
   .hlock .short { display: none; }
-  /* keep brand, nav and chip on one row: the short chip on a laptop, no chip where even that would wrap */
-  @media (max-width: 1500px) and (min-width: 641px) {
+  /* keep brand, nav and chip on one row (measured with Playground in the nav, 19/10/2026): a tighter nav up to 1640,
+     the short chip up to 1520, no chip up to 1400; it fits on one row down to about 1270, the nav wraps below that */
+  @media (max-width: 1640px) and (min-width: 641px) {
+    .hnav { gap: 0; }
+    .hnav a { padding: var(--space-2xs); }
+  }
+  @media (max-width: 1520px) and (min-width: 641px) {
     .hlock .full { display: none; }
     .hlock .short { display: inline; }
   }

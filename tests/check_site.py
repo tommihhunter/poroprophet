@@ -12,7 +12,7 @@ import functools, http.server, json, os, re, shutil, sys, tempfile, threading
 from playwright.sync_api import sync_playwright
 
 PAGES = ["", "scorecard/", "meta/", "play-in/", "swiss/", "knockouts/", "demacia-cup/", "teams/", "teams/gen/",
-         "teams/mvk/", "teams/compare/", "teams/compare/gen-vs-hle/", "players/", "players/chovy/"]
+         "teams/mvk/", "teams/compare/", "teams/compare/gen-vs-hle/", "players/", "players/chovy/", "playground/"]
 WIDTHS = [1280, 768, 390]
 BASE = os.environ.get("W26_BASE", "/").strip("/")  # same env as site/astro.config.mjs
 PREFIX = f"/{BASE}" if BASE else ""
@@ -154,6 +154,30 @@ def check_swiss(browser, target, problems):
     page.close()
 
 
+def check_playground(browser, target, problems):
+    """Playground at 1440: pick a winner in every open round 1 series, lock in, and round 2 shows 4 games at 1-0 and
+    4 at 0-1; "Run 1,000" then renders one odds row per Swiss team (16)."""
+    page = browser.new_page(viewport={"width": 1440, "height": 900})
+    page.on("pageerror", lambda e: problems.append(f"playground: page error: {e}"))
+    page.goto(target, wait_until="networkidle")
+    for m in page.locator(".pg-m").all():
+        if not m.locator(".pg-t[aria-pressed=true]").count():
+            m.locator(".pg-t").first.click()
+    page.click("[data-act=lock]")
+    stage = page.inner_text("#pg-stage")
+    groups = page.evaluate("[...document.querySelectorAll('.pg-group')].map(g => g.querySelector('.code').textContent + ' ' + g.querySelectorAll('.pg-m').length)")
+    print(f"playground @1440: after lock in {stage}: {groups}")
+    if groups != ["1-0 4", "0-1 4"]:
+        problems.append(f"playground @1440: round 2 shows {groups}, expected 1-0 4 and 0-1 4")
+    page.click("[data-run='1000']")
+    page.wait_for_function("document.querySelectorAll('#pg-odds .pg-row').length > 0 && !document.querySelector('[data-run]').disabled")
+    rows = page.locator("#pg-odds .pg-row").count()
+    print(f"playground @1440: odds from here shows {rows} rows")
+    if rows != 16:
+        problems.append(f"playground @1440: odds from here shows {rows} rows, expected 16")
+    page.close()
+
+
 def main():
     if not os.path.exists(os.path.join(DIST, "index.html")):
         sys.exit("build the site first: (cd site && npm run build)")
@@ -223,6 +247,8 @@ def main():
                     check_teams_nojs(browser, url + pg, problems)
                 if pg == "swiss/":
                     check_swiss(browser, url + pg, problems)
+                if pg == "playground/":
+                    check_playground(browser, url + pg, problems)
             browser.close()
     finally:
         srv.shutdown()

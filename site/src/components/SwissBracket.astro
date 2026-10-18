@@ -64,6 +64,7 @@ const pending = (round: number, games: number) => `${games} ${games === 1 ? 'gam
       ))}
     </div>
   </div>
+  <slot />
   <p class="caption" data-follow-hint hidden>Hover or tap a team to follow it through the bracket; tap it again or press Escape to clear.</p>
 </section>
 <style>

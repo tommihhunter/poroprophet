@@ -9,6 +9,7 @@ export const NAV: NavItem[] = [
   { id: 'play-in', label: 'Play-In', path: 'play-in/', group: 'event', desc: 'Four teams, one Swiss spot' },
   { id: 'swiss', label: 'Swiss', path: 'swiss/', group: 'event', desc: 'Pick\'Ems and every team\'s likely record' },
   { id: 'knockouts', label: 'Knockouts', path: 'knockouts/', group: 'event', desc: 'Assumed bracket and how far each team goes' },
+  { id: 'playground', label: 'Playground', path: 'playground/', group: 'event', desc: 'What if: pick the winners, see the odds' },
   { id: 'demacia-cup', label: 'Demacia Cup', path: 'demacia-cup/', group: 'event', desc: 'The warm-up test' },
   { id: 'teams', label: 'Teams', path: 'teams/', group: 'reference', desc: 'Every team at Worlds and its dossier' },
   { id: 'players', label: 'Players', path: 'players/', group: 'reference', desc: 'Every starter: stats, rankings and champions' },

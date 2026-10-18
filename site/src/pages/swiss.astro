@@ -41,7 +41,7 @@ const footLeft = `${staged ? `Staged ${setLabel(v.swissSet)}` : 'Frozen baseline
     <p class="lede">{lede}</p>
   </section>
   <LiveNow phase="Swiss" />
-  <SwissBracket />
+  <SwissBracket><p class="caption">What if? <a class="gold" href={url('playground/')}>Play the rest out yourself in the Playground</a>.</p></SwissBracket>
   <PickemsPanel stage="swiss" full />
   <RecordTable rows={rows} records={swissRecords()} caption={caption} />
   <SwissPools />
