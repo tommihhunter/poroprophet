@@ -48,6 +48,15 @@ const ROLES = ['TOP', 'JNG', 'MID', 'ADC', 'SUP'];
 const p100 = (x: number | null | undefined) => (x == null ? null : x * 100);
 const one = (x: number | null | undefined, dp = 1) => (x == null ? 'UNKNOWN' : x.toFixed(dp));
 
+// A team missing from the live odds once they exist has been knocked out: its live odds are 0, shown as "Out".
+const knockedOut = (code: string) => live().length > 0 && !live().some((x) => x.team === code);
+function liveRow(label: string, a: string, b: string, key: 'p_advance' | 'p_champion'): Row {
+  const v = (c: string) => (knockedOut(c) ? 0 : p100(live().find((x) => x.team === c)?.[key]));
+  const [l, r] = [v(a), v(b)];
+  const verdict_ = knockedOut(a) && knockedOut(b) ? 'both knocked out' : verdict(a, b, l, r, 'pct1', true);
+  return { label, left: knockedOut(a) ? 'Out' : l, right: knockedOut(b) ? 'Out' : r, fmt: 'pct1', higherIsBetter: true, verdict: verdict_, bar: [l, r] };
+}
+
 function laneText(p: Player | undefined): string | null {
   if (!p) return null;
   return `${p.player} · KDA ${one(p.kda)} · GD@15 ${show(p.gd15, 'signed')} · KP ${p.kp == null ? 'UNKNOWN' : `${one(p.kp)}%`}`;
@@ -63,8 +72,6 @@ export function headToHead(a: string, b: string) {
 export function metrics(a: string, b: string): Group[] {
   const rA = ratings().find((x) => x.code === a);
   const rB = ratings().find((x) => x.code === b);
-  const lA = live().find((x) => x.team === a);
-  const lB = live().find((x) => x.team === b);
   const sA = swiss().find((x) => x.set === 'baseline' && x.team === a);
   const sB = swiss().find((x) => x.set === 'baseline' && x.team === b);
   const dA: Dossier | undefined = dossiers().find((x) => x.code === a);
@@ -80,9 +87,11 @@ export function metrics(a: string, b: string): Group[] {
     title: 'Model',
     rows: [
       num('Rating', rA?.elo, rB?.elo, 'int', true),
-      num('Reach knockouts (live)', p100(lA?.p_advance), p100(lB?.p_advance), 'pct1', true),
-      num('Swiss 3-0 (frozen baseline)', p100(sA?.p30), p100(sB?.p30), 'pct1', true),
-      num('Title odds (live)', p100(lA?.p_champion), p100(lB?.p_champion), 'pct1', true),
+      liveRow('Reach knockouts (live)', a, b, 'p_advance'),
+      // Play-In teams had no Swiss line in the frozen baseline
+      sA && sB ? num('Swiss 3-0 (frozen baseline)', p100(sA.p30), p100(sB.p30), 'pct1', true)
+        : { label: 'Swiss 3-0 (frozen baseline)', left: sA ? p100(sA.p30) : 'Play-In', right: sB ? p100(sB.p30) : 'Play-In', fmt: 'pct1', higherIsBetter: true, verdict: 'no baseline line for Play-In teams' },
+      liveRow('Title odds (live)', a, b, 'p_champion'),
     ],
   };
 
@@ -143,11 +152,9 @@ export function summary(a: string, b: string): { fmt: string; rows: Row[] }[] {
   const forA = (p: number | undefined) => (p == null ? null : x === a ? p : 1 - p);
   const rA = ratings().find((r) => r.code === a);
   const rB = ratings().find((r) => r.code === b);
-  const lA = live().find((r) => r.team === a);
-  const lB = live().find((r) => r.team === b);
   const win = (p: number | null): Row => ({ label: 'Win chance', left: p100(p), right: p == null ? null : p100(1 - p), fmt: 'pct1', higherIsBetter: true, verdict: verdict(a, b, p100(p), p == null ? null : p100(1 - p), 'pct1', true) });
   const rest: Row[] = [
-    { label: 'Title odds (live)', left: p100(lA?.p_champion), right: p100(lB?.p_champion), fmt: 'pct1', higherIsBetter: true, verdict: verdict(a, b, p100(lA?.p_champion), p100(lB?.p_champion), 'pct1', true) },
+    liveRow('Title odds (live)', a, b, 'p_champion'),
     { label: 'Rank', left: rA?.rank ?? null, right: rB?.rank ?? null, fmt: 'int', higherIsBetter: false, verdict: verdict(a, b, rA?.rank, rB?.rank, 'int', false) },
   ];
   return [
