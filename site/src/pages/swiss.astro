@@ -3,8 +3,12 @@ import LiveNow from '../components/LiveNow.astro';
 import Base from '../layouts/Base.astro';
 import PickemsPanel from '../components/PickemsPanel.astro';
 import RecordTable from '../components/RecordTable.astro';
+import SwissBracket from '../components/SwissBracket.astro';
+import SwissPools from '../components/SwissPools.astro';
 import { overview, series, swiss } from '../lib/data';
 import { STAGES, drawPassed, setLabel, swissRecords, view } from '../lib/stage';
+import { swissState } from '../lib/swiss';
+import { url } from '../lib/url';
 
 const st = STAGES[1];
 const v = view(st, 'latest');
@@ -16,8 +20,10 @@ const from = /^\d\d\/\d\d/.exec(st.dates)?.[0];
 const where = st.venue.split(', ').slice(-2).join(', ');
 // the draw date is a US date: it counts as done only from the NZ day after it
 const { draw, passed: drawn } = drawPassed();
+const r1 = swissState().rounds[0].groups[0].matches.length;
 const drawLine = staged
   ? `Re-run after the round 1 draw, predicted ${created}.`
+  : r1 ? `Round 1 is drawn (${r1} games); the picks below stay preliminary until the re-run.`
   : !draw ? 'These picks are preliminary until the re-run after the round 1 draw.'
   : drawn ? `The round 1 draw was on ${draw} (US time); these picks stay preliminary until the re-run.`
   : `The round 1 draw is on ${draw} (US time), so these picks are preliminary until the re-run.`;
@@ -35,8 +41,11 @@ const footLeft = `${staged ? `Staged ${setLabel(v.swissSet)}` : 'Frozen baseline
     <p class="lede">{lede}</p>
   </section>
   <LiveNow phase="Swiss" />
+  <SwissBracket />
   <PickemsPanel stage="swiss" full />
   <RecordTable rows={rows} records={swissRecords()} caption={caption} />
+  <SwissPools />
+  <script is:inline src={url('js/follow.js')} defer></script>
 </Base>
 <style>
   /* the h1 needs more than the shared 70ch intro width to stay on one line at desktop widths; the lede keeps its own 60ch */

@@ -8,7 +8,7 @@ Pages not built yet are skipped.
 Screenshots go to site/shots/<page>-<width>.png (outside dist, so they are never published).
 Run: python -X utf8 model/export_site_assets.py && (cd site && npm run build) && python -X utf8 tests/check_site.py
 """
-import functools, http.server, os, re, shutil, sys, tempfile, threading
+import functools, http.server, json, os, re, shutil, sys, tempfile, threading
 from playwright.sync_api import sync_playwright
 
 PAGES = ["", "scorecard/", "meta/", "play-in/", "swiss/", "knockouts/", "demacia-cup/", "teams/", "teams/gen/",
@@ -131,6 +131,29 @@ def check_compare_pick(page, tag, problems):
         problems.append(f"{tag}: pickers landed on {page.url}, expected .../teams/compare/hle-vs-t1/")
 
 
+def check_swiss(browser, target, problems):
+    """Swiss at 1440: round 1 shows one .sb-match per round 1 row in data/dash/results.json, and hovering a team in
+    the bracket lights up every mark of that team (follow.js) and no other team's."""
+    dash = os.environ.get("W26_DASH") or os.path.join(ROOT, "data", "dash")
+    with open(os.path.join(dash, "results.json"), encoding="utf-8") as fh:
+        want = sum(1 for r in json.load(fh) if r.get("phase") == "Swiss" and r.get("kind") == "series" and r.get("round") == 1)
+    page = browser.new_page(viewport={"width": 1440, "height": 900})
+    page.goto(target, wait_until="networkidle")
+    got = page.locator(".sb-col").first.locator(".sb-match").count()
+    print(f"swiss @1440: round 1 shows {got} games, results have {want}")
+    if got != want:
+        problems.append(f"swiss @1440: round 1 shows {got} games, expected {want}")
+    if want:
+        team = page.locator(".sb-match [data-team]").first.get_attribute("data-team")
+        page.locator(".sb-match [data-team]").first.hover()
+        lit = page.evaluate("[...document.querySelectorAll('.is-follow')].map(e => e.dataset.team)")
+        total = page.locator(f"[data-follow-scope] [data-team='{team}']").count()
+        print(f"swiss @1440: hover {team} lights {len(lit)} of {total} marks")
+        if set(lit) != {team} or len(lit) != total or total < 2:
+            problems.append(f"swiss @1440: hover {team} lit {lit}, expected all {total} {team} marks")
+    page.close()
+
+
 def main():
     if not os.path.exists(os.path.join(DIST, "index.html")):
         sys.exit("build the site first: (cd site && npm run build)")
@@ -198,6 +221,8 @@ def main():
                     page.close()
                 if pg == "teams/":
                     check_teams_nojs(browser, url + pg, problems)
+                if pg == "swiss/":
+                    check_swiss(browser, url + pg, problems)
             browser.close()
     finally:
         srv.shutdown()

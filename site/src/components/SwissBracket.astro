@@ -1,0 +1,106 @@
+---
+/* Swiss bracket by record (lib/swiss.ts): five round columns, each a stack of record groups, then Qualified and
+   Eliminated. A match card shows both teams' chances before it is played and the score after (winner first).
+   Groups not drawn yet list the teams known to be on that record. Every team mark carries data-team for
+   public/js/follow.js. Desktop: columns side by side (scrolls inside .scroll if narrow); phone: rounds stacked. */
+import Logo from './Logo.astro';
+import { swissState } from '../lib/swiss';
+import { pct } from '../lib/format';
+const { rounds, qualified, eliminated } = swissState();
+const drawnGames = rounds[0].groups[0].matches.length;
+const pending = (round: number, games: number) => `${games} ${games === 1 ? 'game' : 'games'}, ${round === 1 ? 'draw pending' : `drawn after round ${round - 1}`}`;
+---
+<section class="section sb" data-follow-scope aria-label="Swiss bracket by record">
+  <div class="section-head">
+    <h2>Swiss bracket</h2>
+    <span>{drawnGames ? "The model's chance for each match: one game in a Bo1, the series in a Bo3." : 'Round 1 is not drawn yet.'}</span>
+  </div>
+  <div class="scroll" tabindex="0" role="region" aria-label="Swiss bracket, scrolls sideways">
+    <div class="sb-grid">
+      {rounds.map((r) => (
+        <section class="sb-col" aria-label={`Round ${r.round}`}>
+          <h3 class="sb-head">Round {r.round}</h3>
+          {r.groups.map((g) => (
+            <div class="sb-group">
+              <p class="sb-gh"><span class="code">{g.record}</span><span>Bo{g.bo}</span></p>
+              {g.matches.length > 0 && (
+                <div class="sb-matches">
+                  {g.matches.map((m) => {
+                    const rows = m.winner
+                      ? [[m.winner, m.score!.split('-')[0], true], [m.winner === m.a ? m.b : m.a, m.score!.split('-')[1], false]]
+                      : [[m.a, pct(m.pa), m.pa != null && m.pa >= 0.5], [m.b, m.pa == null ? 'UNKNOWN' : pct(1 - m.pa), m.pa != null && m.pa < 0.5]];
+                    const label = m.winner ? `${m.winner} beat ${rows[1][0]} ${m.score}` : `${m.a} ${rows[0][1]}, ${m.b} ${rows[1][1]}, Bo${m.bo}`;
+                    return (
+                      <div class:list={['sb-match', { played: !!m.winner }]} data-bo={m.bo} aria-label={label}>
+                        {rows.map(([t, v, lead]) => (
+                          <span class:list={['sb-team', { lead }]} data-team={t}>
+                            <Logo code={t as string} size={22} /><span class="code">{t}</span><span class="sb-v">{v}</span>
+                          </span>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {!g.drawn && (
+                <div class="sb-pending">
+                  <span class="caption">{pending(r.round, g.games - g.matches.length)}</span>
+                  {g.teams.length > 0 && r.round > 1 && (
+                    <span class="sb-chips">{g.teams.map((t) => <span class="sb-team chip-team" data-team={t}><Logo code={t} size={18} /><span class="code">{t}</span></span>)}</span>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </section>
+      ))}
+      {[['Qualified', qualified, 'teal'], ['Eliminated', eliminated, 'risk']].map(([title, list, tone]) => (
+        <section class="sb-col sb-out" aria-label={title as string}>
+          <h3 class:list={['sb-head', tone]}>{title}</h3>
+          {(list as typeof qualified).length
+            ? <div class="sb-list">{(list as typeof qualified).map((x) => <span class="sb-team" data-team={x.team}><Logo code={x.team} size={22} /><span class="code">{x.team}</span><span class="sb-v">{x.record}</span></span>)}</div>
+            : <p class="caption">None yet</p>}
+        </section>
+      ))}
+    </div>
+  </div>
+  <p class="caption" data-follow-hint hidden>Hover or tap a team to follow it through the bracket; tap it again or press Escape to clear.</p>
+</section>
+<style>
+  /* 5 rounds then 2 narrower outcome columns: about 1200px at the smallest, so 1280 and up show it without scrolling */
+  .sb-grid { display: grid; grid-template-columns: repeat(5, minmax(176px, 1fr)) repeat(2, minmax(112px, 0.7fr)); gap: var(--space-sm); align-items: start; }
+  .sb-col { display: flex; flex-direction: column; gap: var(--space-sm); min-width: 0; }
+  .sb-head { font-size: var(--fs-md); color: var(--muted2); padding-bottom: var(--space-2xs); border-bottom: 1px solid var(--line-strong); }
+  .sb-head.teal { color: var(--teal); }
+  .sb-head.risk { color: var(--risk); }
+  .sb-group { display: flex; flex-direction: column; gap: var(--space-2xs); }
+  .sb-gh { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--fs-sm); color: var(--muted); }
+  .sb-gh .code { color: var(--fg2); }
+  .sb-matches { display: flex; flex-direction: column; gap: var(--space-2xs); }
+  .sb-match { display: flex; flex-direction: column; background: var(--surface); border-radius: var(--radius-sm); box-shadow: var(--inset); padding: var(--space-3xs); }
+  .sb-team { display: flex; align-items: center; gap: var(--space-2xs); padding: var(--space-3xs) var(--space-2xs); border-radius: var(--radius-bar); color: var(--muted); min-width: 0; }
+  .sb-team.lead { color: var(--fg); }
+  .sb-team .code { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sb-v { font-weight: 600; font-size: var(--fs-sm); }
+  .sb-match.played .sb-v { font-family: var(--font-display); font-size: var(--fs-md); }
+  .sb-pending { display: flex; flex-direction: column; gap: var(--space-2xs); padding: var(--space-xs); border-radius: var(--radius-sm); border: 1px dashed var(--line-head); }
+  .sb-chips { display: flex; flex-wrap: wrap; gap: var(--space-3xs); }
+  .chip-team { padding: 0 var(--space-2xs) 0 0; color: var(--fg2); font-size: var(--fs-sm); }
+  .sb-list { display: flex; flex-direction: column; gap: var(--space-3xs); }
+  .sb-out .sb-team { color: var(--fg); }
+  /* follow a team (public/js/follow.js): the followed team's marks light up, every other mark steps back */
+  :global(.sb-team[tabindex]) { cursor: pointer; }
+  .sb-team:global(.is-follow) { background: var(--line-head); color: var(--fg); }
+  :global(:root[data-following]) .sb-team:not(:global(.is-follow)) { opacity: 0.45; }
+  .sb-team:focus-visible { outline-offset: 0; }
+
+  @media (max-width: 1100px) {
+    /* rounds stacked, each round a block with its groups side by side */
+    .sb-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-lg) var(--space-sm); }
+    .sb-col:not(.sb-out) { grid-column: 1 / -1; }
+    .sb-col:not(.sb-out) { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: var(--space-sm); }
+    /* the head and a round's only group (rounds 1 and 5) take the full width */
+    .sb-col:not(.sb-out) > .sb-head, .sb-col:not(.sb-out) > .sb-group:nth-child(2):last-child { grid-column: 1 / -1; }
+    .sb-matches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  }
+</style>
