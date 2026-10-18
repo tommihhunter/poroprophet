@@ -150,6 +150,9 @@ def load_known(path):
                 qf.append((a, b))
             if w:
                 ko_win[frozenset((a, b))] = w
+    if piw is None:   # the Swiss draw comes after the Play-In final, so a Play-In team in round 1 is the winner
+        pi_teams = {t for r in rows if r.get("phase") == "Play-In" for t in (r.get("team_a"), r.get("team_b"))}
+        piw = next((t for pr in swiss_pairs.get(1, []) for t in pr if t in pi_teams), None)
     return dict(piw=piw, playin=playin, swiss_pairs=dict(swiss_pairs), swiss_win=swiss_win, qf=qf if len(qf) == 4 else None, ko_win=ko_win)
 
 

@@ -159,6 +159,19 @@ def test_load_known_playin_by_slot_and_empty():
     assert k["playin"] == {"PI-R1-A": "KC", "PI-GF": "C9"} and k["piw"] == "C9"
 
 
+def test_load_known_piw_from_swiss_draw():
+    # the Swiss draw is made after the Play-In final: a Play-In team in round 1 is the winner, final result or not
+    import tempfile
+    rows = [dict(id="PI-R1-A", phase="Play-In", kind="series", team_a="KC", team_b="C9", winner="KC"),
+            dict(id="SW-R1-AL-KC", phase="Swiss", kind="series", round=1, team_a="AL", team_b="KC", winner=None),
+            dict(id="SW-R1-IG-GEN", phase="Swiss", kind="series", round=1, team_a="IG", team_b="GEN", winner=None)]
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as fh:
+        json.dump(rows, fh)
+    k = S.load_known(fh.name)
+    os.unlink(fh.name)
+    assert k["piw"] == "KC" and len(k["swiss_pairs"][1]) == 2
+
+
 def test_playin_rematch_final_uses_slot_result():
     st = S.SeriesTable(R.Model(full_fit(), []))
     rng = random.Random(3)
