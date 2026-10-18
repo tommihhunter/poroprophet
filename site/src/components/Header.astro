@@ -26,7 +26,7 @@ const moreOn = MORE.includes(active);
     <nav class="hnav" aria-label="Sections">
       {main.map((n) => <a href={url(n.path)} aria-current={active === n.id ? 'page' : undefined}>{n.label}</a>)}
       <details class="hmore">
-        <summary class:list={{ on: moreOn }}>{moreOn ? more.find((n) => n.id === active)?.label : 'More'}<svg class="caret" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></summary>
+        <summary class:list={{ on: moreOn }}>More<svg class="caret" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></summary>
         <div class="menu">
           {more.map((n) => <a href={url(n.path)} aria-current={active === n.id ? 'page' : undefined}><span class="t">{n.label}</span><span class="s">{n.desc}</span></a>)}
         </div>
