@@ -6,7 +6,7 @@ Written 16/10/2026 08:40 NZDT. This replaces HANDOVER_v4.md (kept for history). 
 A personal League of Legends Worlds 2026 prediction tool: cited research on the 19 teams, a hierarchical Bradley-Terry rating fitted at series level on every 2026 series (gol.gg), a Monte Carlo of the Play-In / Swiss / knockouts, Pick'Ems and Crystal Ball picks, and a dashboard that grades itself as results come in. Two front ends exist: an online dashboard (claude.ai Dashboard artifact, colour team badges, datasets uploaded as JSON) and a local standalone file (`python3 model/build_local.py` -> `worlds2026_predictor.html`, 1.06 MB, embeds real team logos and Riot Data Dragon art). A Claude Design canvas (`design/`) holds four artboards for a public-site look that has NOT been ported to either front end yet.
 
 ## Website
-Site v2 (16/10/2026): a static Astro site in `site/`, built from `data/dash/*.json`. Live at https://poroprophet.lol (GitHub Pages with a custom domain; repo tommihhunter/WorldsPredictor2026).
+Site v2 (16/10/2026): a static Astro site in `site/`, built from `data/dash/*.json`. Live at https://poroprophet.lol (GitHub Pages with a custom domain; repo tommihhunter/poroprophet).
 - Build locally (Node 24, Python as below):
   ```
   python -X utf8 model/export_dashboard.py && python -X utf8 model/export_site_assets.py && cd site && npm ci && npm run build

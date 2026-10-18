@@ -2,7 +2,7 @@
 // Worlds 2026 (16/10 to 16/11/2026 NZDT). GitHub throttles its own schedules to every 2 to 5 hours; a started
 // (workflow_dispatch) run is not throttled. The workflow decides whether anything changed and whether to publish.
 // Secret GH_TOKEN: a fine-grained GitHub token with "Actions: read and write" on this one repository only.
-const REPO = 'tommihhunter/WorldsPredictor2026';
+const REPO = 'tommihhunter/poroprophet';
 const WORKFLOW = 'update.yml';
 const START = Date.UTC(2026, 9, 15, 11, 0);   // 16/10/2026 00:00 NZDT
 const END = Date.UTC(2026, 10, 16, 11, 0);    // 17/11/2026 00:00 NZDT
