@@ -49,15 +49,19 @@ jobs:
         id: data
         if: steps.window.outputs.run == 'yes'
         run: |
+          # Riot's live state (live / finished within minutes); never fails the run, a fetch error keeps the last file
+          python -X utf8 model/live_state.py
           python -X utf8 model/update_results.py
           if git diff --quiet -- data/results_live.json; then
             echo "no new results"
             # Daily publish: "Today" and the In play flags are build-time, so deploy once per NZDT day even with
             # nothing new. The last export stamp (exported_nz) stands in for the last deploy; re-exporting advances it.
+            # Also publish when Riot's schedule changed (a state, the game wins or the teams; fetched_nz ignored).
             today=$(TZ=Pacific/Auckland date +%d/%m/%Y)
             last=$(python -X utf8 -c "import json; print(next(r['value'] for r in json.load(open('data/dash/overview.json', encoding='utf-8')) if r['key'] == 'exported_nz'))")
-            if [ "${{ inputs.force }}" = "true" ] || [ "${last#*$today}" = "$last" ]; then
-              echo "publish (forced, or last export $last is not today $today)"
+            sched=$(python -X utf8 model/live_state.py --changed)
+            if [ "${{ inputs.force }}" = "true" ] || [ "${last#*$today}" = "$last" ] || [ "$sched" = "yes" ]; then
+              echo "publish (forced, Riot schedule changed: $sched, or last export $last is not today $today)"
               python -X utf8 model/export_dashboard.py
               echo "publish=yes" >> "$GITHUB_OUTPUT"
             else

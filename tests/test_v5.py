@@ -251,6 +251,30 @@ def test_compare_pages():
     assert "Never met in 2025 or 2026." in cfo
 
 
+def test_live_state_parse():
+    import live_state as LS
+    team = lambda code, name, wins=None: {"code": code, "name": name, "result": None if wins is None else {"outcome": None, "gameWins": wins}}
+    match = lambda start, state, block, bo, a, b: {"startTime": start, "state": state, "type": "match", "blockName": block,
+                                                   "match": {"id": start, "teams": [a, b], "strategy": {"type": "bestOf", "count": bo}}}
+    events = [
+        match("2026-10-24T17:00:00Z", "unstarted", "Swiss", 1, team("TBD", "TBD"), team("TBD", "TBD")),
+        match("2026-10-18T06:00:00Z", "completed", "Play-Ins", 5, team("KC", "Karmine Corp", 3), team("FUR", "FURIA", 1)),
+        match("2026-10-23T17:00:00Z", "inProgress", "Swiss", 3, team("TL", "Team Liquid", 1), team("XYZ", "Nobody", 0)),
+        match("2026-10-14T10:59:00Z", "completed", "Play-Ins", 5, team("KC", "Karmine Corp", 3), team("C9", "Cloud9", 2)),  # 14/10 23:59 NZDT
+        {"startTime": "2026-10-20T00:00:00Z", "state": "completed", "type": "show", "blockName": "Show"},
+    ]
+    unknown = set()
+    rows = LS.parse(events, "19/10/2026 12:00", unknown)
+    assert [r["state"] for r in rows] == ["completed", "inProgress", "unstarted"]
+    assert rows[0] == {"start_utc": "2026-10-18T06:00:00Z", "start_nz": "18/10/2026 19:00", "block": "Play-Ins", "state": "completed",
+                       "bo": 5, "team_a": "KC", "team_b": "FURIA", "wins_a": 3, "wins_b": 1, "fetched_nz": "19/10/2026 12:00"}
+    assert (rows[1]["team_a"], rows[1]["team_b"], rows[1]["wins_a"], rows[1]["start_nz"]) == ("TLAW", "XYZ", 1, "24/10/2026 06:00")
+    assert (rows[2]["team_a"], rows[2]["team_b"], rows[2]["wins_a"], rows[2]["bo"]) == ("TBD", "TBD", 0, 1)
+    assert unknown == {"XYZ (Nobody)"}
+    names = {"Anyone's Legend": "AL", "Movistar KOI": "MKOI", "Los Grandes": "LOS", "CTBC Flying Oyster": "CFO", "MVK Esports": "MVK"}
+    assert all(LS.code({"code": "?", "name": n}, set()) == c for n, c in names.items())
+
+
 if __name__ == "__main__":
     tests = [(n, f) for n, f in list(globals().items()) if n.startswith("test_") and callable(f)]
     failed = 0
