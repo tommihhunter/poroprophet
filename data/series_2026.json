@@ -15904,6 +15904,22 @@
 "intl": true
 },
 {
+"date": "18/10/2026",
+"tournament": "Worlds 2026 Play-In",
+"stage": "ROUND3",
+"kind": "international",
+"league": "INTL",
+"a": "KC",
+"b": "MVK",
+"sa": 3,
+"sb": 0,
+"bo": 5,
+"region_a": "LEC",
+"region_b": "LCP",
+"patch": "16.20",
+"intl": true
+},
+{
 "date": "17/10/2026",
 "tournament": "Worlds 2026 Play-In",
 "stage": "ROUND2",

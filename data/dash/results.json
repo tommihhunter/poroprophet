@@ -103,5 +103,26 @@
 "series_url": "https://gol.gg/game/stats/83631/page-summary/",
 "accessed": "18/10/2026 10:50 NZDT"
 }
+},
+{
+"id": "PI-GF",
+"phase": "Play-In",
+"kind": "series",
+"stage": "Play-In final",
+"golgg_stage": "ROUND3",
+"date": "18/10/2026",
+"start_nz": null,
+"team_a": "KC",
+"team_b": "MVK",
+"score_a": 3,
+"score_b": 0,
+"winner": "KC",
+"bo": 5,
+"patch": "16.20",
+"source": {
+"url": "https://gol.gg/tournament/tournament-matchlist/Worlds%202026%20Play-In/",
+"series_url": "https://gol.gg/game/stats/83635/page-summary/",
+"accessed": "19/10/2026 09:51 NZDT"
+}
 }
 ]
