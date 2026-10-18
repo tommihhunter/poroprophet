@@ -1,15 +1,10 @@
 ---
 /* Site header (every page, Home included, so the nav never moves), per design/lore/Site Header.dc.html.
-   Desktop: avatar + wordmark, nav, next-lock chip. Under 640px: avatar + page title, compact lock chip. */
-import { NAV, nextLock } from '../lib/nav';
-import { overview } from '../lib/data';
+   Desktop: avatar + wordmark, nav centred, More dropdown. Under 640px: avatar + page title (the phone bottom bar navigates). */
+import { NAV } from '../lib/nav';
 import { url } from '../lib/url';
 interface Props { active: string; title: string }
 const { active, title } = Astro.props;
-const lock = nextLock();
-const raw = overview().next_lock;
-// phone: the lock chip only on its own stage's page (Phone Pages.dc.html shows it on Swiss only)
-const own = !!lock && active === lock.stage.toLowerCase();
 // desktop: the event and reference pages in the bar, the rest in a More dropdown (a <details>, works without JS)
 const MORE = ['playground', 'demacia-cup', 'scorecard', 'meta'];
 const main = NAV.filter((n) => !MORE.includes(n.id));
@@ -32,9 +27,6 @@ const moreOn = MORE.includes(active);
         </div>
       </details>
     </nav>
-    {lock
-      ? <span class:list={['chip lock hlock', { 'ph-off': !own }]}><span class="full">{lock.stage} lock {lock.day}, {lock.time} NZDT</span><span class="short">Locks {lock.day}</span></span>
-      : raw && <span class="chip lock hlock">{raw}</span>}
   </div>
 </header>
 <script is:inline>
@@ -45,13 +37,14 @@ const moreOn = MORE.includes(active);
 <style>
   .hdr { border-bottom: 1px solid var(--line-head); background: var(--bg); position: sticky; top: 0; z-index: 20; }
   /* same content edge as the page and footer (--wrap) */
-  .hdr-in { max-width: var(--wrap); margin: 0 auto; padding: var(--space-xs) var(--gutter); min-height: 76px; display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-xs) var(--space-md); }
+  .hdr-in { max-width: var(--wrap); margin: 0 auto; padding: var(--space-xs) var(--gutter); min-height: 76px; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--space-xs) var(--space-md); }
+  /* brand left, nav centred on the bar (the empty third column balances the brand) */
   .brand { display: flex; align-items: center; gap: var(--space-xs); color: var(--fg); }
   .avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--gold); }
   .word, .ptitle, .hnav { text-transform: uppercase; }
   .word, .ptitle { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-xl); letter-spacing: var(--track-caps); line-height: 1.1; }
   .ptitle { display: none; }
-  .hnav { display: flex; flex-wrap: wrap; gap: var(--space-3xs); margin-left: auto; font-family: var(--font-display); font-weight: 700; font-size: var(--fs-sm); letter-spacing: 0.08em; }
+  .hnav { display: flex; flex-wrap: wrap; gap: var(--space-3xs); justify-self: center; font-family: var(--font-display); font-weight: 700; font-size: var(--fs-sm); letter-spacing: 0.08em; }
   .hnav a, .hmore summary { padding: var(--space-2xs) var(--space-xs); border-radius: var(--radius-nav); color: var(--fg2); white-space: nowrap; }
   .hnav a:hover, .hmore summary:hover { color: var(--gold); }
   .hnav a:active, .hmore summary:active { color: var(--muted2); }
@@ -72,28 +65,21 @@ const moreOn = MORE.includes(active);
   .hmore .menu a:hover .t, .hmore .menu a[aria-current="page"] .t { color: var(--gold); }
   .hmore .menu a { border-radius: var(--radius-sm); }
   .hmore .menu a:hover { background: var(--hover); }
-  .hlock .short { display: none; }
-  /* keep brand, nav and chip on one row (seven nav items with More, 19/10/2026): a tighter nav up to 1240,
-     the short chip up to 1180, no chip up to 1000; the nav wraps below about 900 */
+  /* keep brand and nav on one row (seven nav items with More, 19/10/2026): a tighter nav up to 1240,
+     the wordmark hides up to 960 so the centred nav fits down to the phone layout */
   @media (max-width: 1240px) and (min-width: 641px) {
     .hnav { gap: 0; }
     .hnav a, .hmore summary { padding: var(--space-2xs); }
   }
-  @media (max-width: 1180px) and (min-width: 641px) {
-    .hlock .full { display: none; }
-    .hlock .short { display: inline; }
-  }
-  @media (max-width: 1000px) and (min-width: 641px) { .hlock { display: none; } }
+  .word { white-space: nowrap; }
+  /* narrow tablets: the poro avatar alone, so the centred nav keeps one row */
+  @media (max-width: 960px) and (min-width: 641px) { .word { display: none; } }
   @media (max-width: 640px) {
     .hdr { border-bottom-color: var(--line-strong); }
-    .hdr-in { min-height: 0; padding: var(--space-xs) var(--gutter); flex-wrap: nowrap; gap: var(--space-xs); }
+    .hdr-in { min-height: 0; padding: var(--space-xs) var(--gutter); display: flex; flex-wrap: nowrap; gap: var(--space-xs); }
     .brand { min-width: 0; }
     .avatar { width: 36px; height: 36px; }
     .word, .hnav { display: none; }
     .ptitle { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .hlock { margin-left: auto; font-size: var(--fs-xs); padding: 0 var(--space-2xs); line-height: 1.6; flex: none; }
-    .hlock.ph-off { display: none; }
-    .hlock .full { display: none; }
-    .hlock .short { display: inline; }
   }
 </style>
