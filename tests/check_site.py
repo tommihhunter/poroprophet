@@ -154,21 +154,32 @@ def check_swiss(browser, target, problems):
     page.close()
 
 
+# what lock-in shows next: from the stage in #pg-stage to the next round's groups, "record games" (knockouts: "KO games")
+PG_NEXT = {"Swiss round 1": ("Swiss round 2", ["1-0 4", "0-1 4"]), "Swiss round 2": ("Swiss round 3", ["2-0 2", "1-1 4", "0-2 2"]),
+           "Swiss round 3": ("Swiss round 4", ["2-1 3", "1-2 3"]), "Swiss round 4": ("Swiss round 5", ["2-2 3"]),
+           "Swiss round 5": ("Quarterfinals", ["KO 4"]), "Quarterfinals": ("Semifinals", ["KO 2"]), "Semifinals": ("Final", ["KO 1"])}
+
+
 def check_playground(browser, target, problems):
-    """Playground at 1440: pick a winner in every open round 1 series, lock in, and round 2 shows 4 games at 1-0 and
-    4 at 0-1; "Run 1,000" then renders one odds row per Swiss team (16)."""
+    """Playground at 1440: from whatever stage the real results reach, pick a winner in every open series, lock in,
+    and the next round has the Swiss (or knockout) shape in PG_NEXT; "Run 1,000" then renders one odds row per Swiss
+    team (16). At the final there is nothing to lock in, so only the odds are checked."""
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     page.on("pageerror", lambda e: problems.append(f"playground: page error: {e}"))
     page.goto(target, wait_until="networkidle")
-    for m in page.locator(".pg-m").all():
-        if not m.locator(".pg-t[aria-pressed=true]").count():
-            m.locator(".pg-t").first.click()
-    page.click("[data-act=lock]")
-    stage = page.inner_text("#pg-stage")
-    groups = page.evaluate("[...document.querySelectorAll('.pg-group')].map(g => g.querySelector('.code').textContent + ' ' + g.querySelectorAll('.pg-m').length)")
-    print(f"playground @1440: after lock in {stage}: {groups}")
-    if groups != ["1-0 4", "0-1 4"]:
-        problems.append(f"playground @1440: round 2 shows {groups}, expected 1-0 4 and 0-1 4")
+    start = page.text_content("#pg-stage")
+    if start in PG_NEXT:
+        for m in page.locator(".pg-m").all():
+            if not m.locator(".pg-t[aria-pressed=true]").count():
+                m.locator(".pg-t").first.click()
+        page.click("[data-act=lock]")
+        stage = page.text_content("#pg-stage")
+        groups = page.evaluate("[...document.querySelectorAll('.pg-group')].map(g => (g.querySelector('.pg-gh .code')?.textContent || 'KO') + ' ' + g.querySelectorAll('.pg-m').length)")
+        print(f"playground @1440: from {start}, lock in shows {stage}: {groups}")
+        if (stage, groups) != PG_NEXT[start]:
+            problems.append(f"playground @1440: from {start}, lock in shows {stage} {groups}, expected {PG_NEXT[start]}")
+    elif start != "Final":
+        problems.append(f"playground @1440: starts at unknown stage {start!r}")
     page.click("[data-run='1000']")
     page.wait_for_function("document.querySelectorAll('#pg-odds .pg-row').length > 0 && !document.querySelector('[data-run]').disabled")
     rows = page.locator("#pg-odds .pg-row").count()

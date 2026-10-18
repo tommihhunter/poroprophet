@@ -26,10 +26,11 @@ const pending = (round: number, games: number) => `${games} ${games === 1 ? 'gam
               {g.matches.length > 0 && (
                 <div class="sb-matches">
                   {g.matches.map((m) => {
+                    const sc = m.score?.split('-') ?? ['W', '']; // a result entered without a score (lib/swiss.ts: score null)
                     const rows = m.winner
-                      ? [[m.winner, m.score!.split('-')[0], true], [m.winner === m.a ? m.b : m.a, m.score!.split('-')[1], false]]
+                      ? [[m.winner, sc[0], true], [m.winner === m.a ? m.b : m.a, sc[1], false]]
                       : [[m.a, pct(m.pa), m.pa != null && m.pa >= 0.5], [m.b, m.pa == null ? 'UNKNOWN' : pct(1 - m.pa), m.pa != null && m.pa < 0.5]];
-                    const label = m.winner ? `${m.winner} beat ${rows[1][0]} ${m.score}` : `${m.a} ${rows[0][1]}, ${m.b} ${rows[1][1]}, Bo${m.bo}`;
+                    const label = m.winner ? `${m.winner} beat ${rows[1][0]}${m.score ? ` ${m.score}` : ''}` : `${m.a} ${rows[0][1]}, ${m.b} ${rows[1][1]}, Bo${m.bo}`;
                     return (
                       <div class:list={['sb-match', { played: !!m.winner }]} data-bo={m.bo} aria-label={label}>
                         {rows.map(([t, v, lead]) => (

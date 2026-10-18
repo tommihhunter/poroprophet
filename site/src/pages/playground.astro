@@ -31,8 +31,9 @@ if (!r1Drawn) {
   const half = (top: string[], low: string[]) => perms(low).map((p) => top.map((t, i) => [t, p[i]])).find((ps) => ps.every(([a, b]) => regionOf(a) !== regionOf(b))) ?? [];
   swissRows = [...half(pools[0], pools[3]), ...half(pools[1], pools[2])].map(([a, b]) => ({ round: 1, a, b, bo: 1, w: null }));
 }
+// stage from the id: hand-made KO-QF1..4 / KO-SF1..2 (HANDOVER.md step 4) or bot KO-QF-<A>-<B>; id order = bracket order
 const ko = rs.filter((r) => r.phase === 'Knockouts' && r.team_a && r.team_b).sort((x, y) => x.id.localeCompare(y.id))
-  .map((r) => ({ stage: r.id.split('-')[1], a: r.team_a!, b: r.team_b!, w: r.winner ?? null }));
+  .map((r) => ({ stage: /^KO-(QF|SF|F)/.exec(r.id)?.[1] ?? '', a: r.team_a!, b: r.team_b!, w: r.winner ?? null }));
 
 const set = new Set(teams);
 const pairs = Object.fromEntries(matchups().filter((m) => set.has(m.a) && set.has(m.b)).map((m) => [`${m.a}|${m.b}`, [m.p_game, m.p_bo3, m.p_bo5]]));

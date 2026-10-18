@@ -60,7 +60,8 @@
     }
     if (last.stage === 'F') return null;
     const w = last.ms.map((m) => m.w), stage = last.stage === 'QF' ? 'SF' : 'F';
-    const ps = stage === 'SF' ? [[w[0], w[1]], [w[2], w[3]]] : [[w[0], w[1]]];
+    const real = D.ko.filter((k) => k.stage === stage), n = stage === 'SF' ? 2 : 1; // the real draw once it is all in
+    const ps = real.length === n ? real.map((k) => [k.a, k.b]) : stage === 'SF' ? [[w[0], w[1]], [w[2], w[3]]] : [[w[0], w[1]]];
     return { stage, ms: ps.map(([a, b]) => mk(a, b, 5, realW(stage, a, b))) };
   }
   const sample = (m, rnd) => (rnd() < (chance(m.a, m.b, m.bo) ?? 0.5) ? m.a : m.b);
