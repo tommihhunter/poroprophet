@@ -15,7 +15,7 @@
   const markOf = (e) => e.target.closest && e.target.closest('[data-follow-scope] [data-team]');
   for (const m of marks) { m.tabIndex = 0; m.setAttribute('role', 'button'); }
   for (const h of document.querySelectorAll('[data-follow-hint]')) h.hidden = false;
-  const toggle = (m) => { pinned = pinned === m.dataset.team ? null : m.dataset.team; show(pinned ?? m.dataset.team); };
+  const toggle = (m) => { pinned = pinned === m.dataset.team ? null : m.dataset.team; show(pinned); }; // unpinning clears at once, even when a touch tap also fired mouseover
   document.addEventListener('mouseover', (e) => { const m = markOf(e); show(m ? m.dataset.team : pinned); });
   document.addEventListener('focusin', (e) => { const m = markOf(e); show(m ? m.dataset.team : pinned); });
   document.addEventListener('click', (e) => { const m = markOf(e); if (m) toggle(m); });

@@ -90,11 +90,11 @@ const assumption = r1Drawn ? null
         <span id="pg-odds-cap">Simulates everything you have not picked yet</span>
       </div>
       <div class="pg-acts">
-        <button type="button" class="pg-btn pri" data-run="1000">Run 1,000</button>
-        <button type="button" class="pg-btn" data-run="10000">Run 10,000</button>
+        <button type="button" class="pg-btn pri" data-run="10000">Run 10,000</button>
+        <button type="button" class="pg-btn" data-run="1000" title="Quicker, but rougher">Run 1,000</button>
         <span id="pg-odds-status" class="caption" aria-live="polite">Not run yet.</span>
       </div>
-      <ul class="pg-leg" aria-hidden="true" hidden><li><i class="s0"></i>Knockouts</li><li><i class="s1"></i>Semis</li><li><i class="s2"></i>Final</li><li><i class="s3"></i>Champion</li><li class="pg-leg-d">Change against {oddsLabel}, champion %</li></ul>
+      <ul class="pg-leg" aria-hidden="true" hidden><li><i class="s0"></i>Knockouts</li><li><i class="s1"></i>Semis</li><li><i class="s2"></i>Final</li><li><i class="s3"></i>Champion</li><li class="pg-leg-d">Change against {oddsLabel}, champion %; ~0 means within the run's sampling noise</li></ul>
       <ol id="pg-odds" class="pg-odds-rows"></ol>
     </section>
   </div>
@@ -146,7 +146,7 @@ const assumption = r1Drawn ? null
   .pg-champ .code { font-size: var(--fs-2xl); color: var(--gold); }
 
   .pg-standings { display: flex; flex-direction: column; padding: var(--space-2xs) var(--space-md); }
-  .pg-rec { display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: center; gap: var(--space-sm); padding: var(--space-xs) 0; border-top: 1px solid var(--line); min-width: 0; }
+  .pg-rec { display: grid; grid-template-columns: 128px minmax(0, 1fr); align-items: center; gap: var(--space-sm); padding: var(--space-xs) 0; border-top: 1px solid var(--line); min-width: 0; }
   .pg-rec:first-child { border-top: 0; }
   .pg-rec h3 { font-size: var(--fs-md); color: var(--muted2); white-space: nowrap; }
   .pg-rec h3.teal { color: var(--teal); }
@@ -178,7 +178,7 @@ const assumption = r1Drawn ? null
   @media (max-width: 640px) {
     .pg-ms { gap: var(--space-2xs); }
     .pg-t { padding: var(--space-3xs) var(--space-2xs); gap: var(--space-3xs); }
-    .pg-rec { grid-template-columns: 88px minmax(0, 1fr); gap: var(--space-xs); }
+    .pg-rec { grid-template-columns: 120px minmax(0, 1fr); gap: var(--space-xs); }
     .pg-bar { flex-direction: column; }
     .pg-acts .pg-btn { flex: 1 1 auto; }
     .pg-leg .pg-leg-d { margin-left: 0; flex-basis: 100%; }

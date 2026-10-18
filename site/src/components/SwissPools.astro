@@ -16,9 +16,9 @@ const pools = SWISS_POOLS();
         <h3 class="sp-head">Pool {i + 1}</h3>
         <ul>
           {pool.map((t) => (
-            <li class="sp-team" data-team={t === 'Play-In winner' ? undefined : t}>
+            <li><span class="sp-team" data-team={t === 'Play-In winner' ? undefined : t}>
               {t === 'Play-In winner' ? <span class="muted">Play-In winner</span> : <><Logo code={t} size={22} /><span class="code">{t}</span></>}
-            </li>
+            </span></li>
           ))}
         </ul>
       </div>

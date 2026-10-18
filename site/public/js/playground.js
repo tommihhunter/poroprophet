@@ -133,10 +133,8 @@
     }).join('');
   }
   let runs = 0;
-  const render = () => {
-    renderRound(); renderStandings(); save();
-    if (runs) { $('#pg-odds').classList.add('stale'); $('#pg-odds-status').textContent = 'Your picks changed: run again.'; }
-  };
+  const stale = () => { $('#pg-odds').classList.add('stale'); $('#pg-odds-status').textContent = 'Your picks changed: run again.'; };
+  const render = () => { renderRound(); renderStandings(); save(); if (runs) stale(); };
 
   // ---------- actions ----------
   const fill = (how) => { for (const m of cur().ms) if (!m.w) m.w = how(m); render(); };
@@ -188,8 +186,9 @@
       if (done < n) return setTimeout(step, 0);
       runs++;
       btns.forEach((b) => { b.disabled = false; });
-      status.textContent = `${n.toLocaleString('en-NZ')} runs from your picks.`;
       showOdds(cnt, n);
+      // picks, lock-ins, undo or reset during the run: these odds are from the old picks
+      if (JSON.stringify(st.rounds) !== base) stale(); else status.textContent = `${n.toLocaleString('en-NZ')} runs from your picks.`;
     };
     setTimeout(step, 0);
   }
@@ -201,7 +200,10 @@
     el.classList.remove('stale');
     root.querySelector('.pg-leg').hidden = false;
     el.innerHTML = rows.map((r, i) => {
-      const d = r.l ? Math.round((r.p[3] - r.l[3]) * 1000) / 10 : null, ds = d == null ? 'UNKNOWN' : `${d > 0 ? '+' : d < 0 ? '-' : ''}${Math.abs(d).toFixed(1)}`;
+      // change only when it beats the run's noise (2 standard errors of the champion share), else "~0"
+      const raw = r.l ? r.p[3] - r.l[3] : null, noise = 2 * Math.sqrt(Math.max(r.p[3] * (1 - r.p[3]), r.l ? r.l[3] * (1 - r.l[3]) : 0) / n);
+      const d = raw == null ? null : Math.abs(raw) > noise ? Math.round(raw * 1000) / 10 : 0;
+      const ds = d == null ? 'UNKNOWN' : d === 0 ? '~0' : `${d > 0 ? '+' : '-'}${Math.abs(d).toFixed(1)}`;
       const tip = LEG.map((k, j) => `${k} ${pct1(r.p[j])}${r.l ? ` (live ${pct1(r.l[j])})` : ''}`).join(', ');
       return `<li class="pg-row${r.p[0] === 0 ? ' out' : ''}" data-team="${esc(r.t)}" title="${esc(tip)}"><span class="rk">${i + 1}</span>`
         + `<span class="code">${logo(r.t, 24)}${esc(r.t)}</span>`
