@@ -1,0 +1,76 @@
+---
+/* How far teams go: one nested bar per team (Knockouts, Semis, Final, Champion, each drawn from 0, so the shorter,
+   stronger segment sits inside the longer one), champion % as the row's number. Source: live() when it has rows, else
+   the frozen ratings(). Knocked-out teams are left out: absent from live(), out of the Swiss field once the Play-In
+   winner is known (lib/swiss.ts SWISS_POOLS), or eliminated in the Swiss. Top 10, the rest behind a disclosure. */
+import Logo from './Logo.astro';
+import { live, ratings } from '../lib/data';
+import { SWISS_POOLS, swissState } from '../lib/swiss';
+import { pct, pct1 } from '../lib/format';
+
+const lv = live();
+const isLive = lv.length > 0;
+const rows = (isLive ? lv.map((l) => ({ ...l, code: l.team })) : ratings())
+  .map((r) => ({ code: r.code, p: [r.p_advance, r.p_semis, r.p_final, r.p_champion].map(Number) }));
+const pools = SWISS_POOLS().flat();
+const field = pools.includes('Play-In winner') ? null : new Set(pools);
+const out = new Set(swissState().eliminated.map((e) => e.team));
+const teams = rows.filter((r) => (!field || field.has(r.code)) && !out.has(r.code))
+  .sort((a, b) => b.p[3] - a.p[3] || b.p[0] - a.p[0]);
+const top = teams.slice(0, 10), rest = teams.slice(10);
+const LEG = ['Knockouts', 'Semis', 'Final', 'Champion'];
+const when = isLive ? lv[0]?.generated_nz : null;
+const label = isLive ? `Live${when ? `, updated ${when}` : ''}` : 'Frozen baseline';
+const aria = (p: number[]) => LEG.map((k, i) => `${k} ${pct(p[i])}`).join(', ');
+---
+<div class="section tr">
+  <div class="section-head">
+    <h2>How far teams go</h2>
+    <span>{label}, from simulated tournaments</span>
+  </div>
+  <ul class="tr-leg" aria-hidden="true">{LEG.map((k, i) => <li><i class={`s${i}`}></i>{k}</li>)}</ul>
+  {[top, rest].map((list, j) => {
+    const W = j ? 'details' : 'div';
+    return list.length > 0 && (
+      <W class={j ? 'tr-more' : undefined}>
+        {j > 0 && <summary>Show all {teams.length} teams</summary>}
+        <ol class="tr-rows" start={j * 10 + 1}>
+          {list.map((t, i) => (
+            <li class="tr-row" title={aria(t.p)}>
+              <span class="dim tr-rank">{j * 10 + i + 1}</span>
+              <span class="code tr-code"><Logo code={t.code} size={24} />{t.code}</span>
+              <span class="tr-bar" role="img" aria-label={aria(t.p)}>
+                {t.p.map((p, k) => <i class={`s${k}`} style={`width:${(Math.min(1, Math.max(0, p || 0)) * 100).toFixed(1)}%`}></i>)}
+              </span>
+              <span class="tr-p">{pct1(t.p[3])}</span>
+            </li>
+          ))}
+        </ol>
+      </W>
+    );
+  })}
+</div>
+<style>
+  /* one hue, four strengths: Knockouts (widest) faintest, Champion strongest; gold stays the hero number's */
+  .tr { --s0: color-mix(in srgb, var(--bar-alt) 42%, var(--track)); --s1: color-mix(in srgb, var(--bar-alt) 68%, var(--track)); --s2: var(--bar-alt); --s3: color-mix(in srgb, var(--bar-alt) 55%, var(--fg)); }
+  .s0 { background: var(--s0); } .s1 { background: var(--s1); } .s2 { background: var(--s2); } .s3 { background: var(--s3); }
+  .tr-leg { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-3xs) var(--space-sm); font-size: var(--fs-sm); color: var(--muted); }
+  .tr-leg li { display: inline-flex; align-items: center; gap: var(--space-2xs); }
+  .tr-leg i { width: 14px; height: 8px; border-radius: 2px; }
+  .tr-rows { list-style: none; margin: 0; padding: 0; }
+  .tr-row { display: grid; grid-template-columns: 28px 96px minmax(0, 1fr) 72px; align-items: center; gap: var(--space-sm); padding: var(--space-xs) 0; border-top: 1px solid var(--line); }
+  .tr-rank { font-size: var(--fs-sm); }
+  .tr-code { display: inline-flex; align-items: center; gap: var(--space-2xs); font-size: var(--fs-lg); }
+  .tr-bar { position: relative; display: block; height: 10px; border-radius: var(--radius-bar); background: var(--track); overflow: hidden; min-width: 0; }
+  .tr-bar > i { position: absolute; inset: 0 auto 0 0; border-radius: var(--radius-bar); }
+  .tr-p { text-align: right; font-size: var(--fs-lg); font-variant-numeric: tabular-nums; }
+  .tr-more summary { cursor: pointer; padding: var(--space-xs) 0; border-top: 1px solid var(--line); color: var(--muted2); font-size: var(--fs-sm); }
+  .tr-more summary:hover { color: var(--fg); }
+  .tr-more[open] summary { color: var(--muted); }
+  @media (max-width: 640px) {
+    .tr .section-head > span { font-size: var(--fs-xs); }
+    .tr-row { grid-template-columns: 84px minmax(0, 1fr) 60px; gap: var(--space-xs); }
+    .tr-rank { display: none; }
+    .tr-bar { height: 8px; }
+  }
+</style>

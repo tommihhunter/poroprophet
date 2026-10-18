@@ -3,6 +3,7 @@ import LiveNow from '../components/LiveNow.astro';
 import Base from '../layouts/Base.astro';
 import Logo from '../components/Logo.astro';
 import PickemsPanel from '../components/PickemsPanel.astro';
+import TitleRace from '../components/TitleRace.astro';
 import { overview, pickems, ratings, series, teamName } from '../lib/data';
 import { lockStage, stageLine } from '../lib/nav';
 import { pct } from '../lib/format';
@@ -49,11 +50,6 @@ const spoiler = sp ? `${teamName(sp.loser)}, in the ${sp.stage.replace(/\s*\(.*\
 const venue = fin && /\(([^)]+)\)/.exec(fin.time_venue)?.[1];
 const finDate = fin && /\d\d\/\d\d\/\d{4}/.exec(fin.time_nz)?.[0];
 const finalWhere = venue && finDate ? `${venue}, ${finDate} NZDT` : 'UNKNOWN';
-
-// Title odds: the frozen ratings (design/lore/README.md), the same run as the prophecy above and the quick picks.
-const field = rt.map((r) => ({ code: r.code, p: r.p_champion }));
-const top = [...field].sort((a, b) => b.p - a.p).slice(0, 10);
-const max = top[0]?.p || 1;
 
 // Callout, short form (README: risk_assumption "in short form"): the region gap in standard errors from
 // overview.region_gap_lck_lpl, plus the assumption's closing sentence (what depends on it). Then the detection text
@@ -108,22 +104,7 @@ const foot = `${stageLine()}. Baseline sealed ${sealed}. Data: gol.gg, lolesport
         <p class="pro-phone">Likeliest final: {finalPair}. Likeliest spoiler: {sp ? teamName(sp.loser) : 'UNKNOWN'}.</p>
         {closing && <p class="pro-close">{closing}</p>}
       </div>
-      <div class="section odds-sec">
-        <div class="section-head">
-          <h2>Title odds</h2>
-          <span>Top {top.length} of {field.length}, from simulated tournaments</span>
-        </div>
-        <div class="odds">
-          {top.map((t, i) => (
-            <div class="odds-row">
-              <span class="dim odds-rank">{i + 1}</span>
-              <span class="code oc"><Logo code={t.code} size={24} />{t.code}</span>
-              <span class="bar"><i class={i === 0 ? 'gold' : 'alt'} style={`width:${((t.p / max) * 100).toFixed(1)}%`}></i></span>
-              <span class="odds-p">{pct(t.p, 1)}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <TitleRace />
     </div>
     <div class="stack side">
       {ls && <PickemsPanel stage={ls} />}
@@ -165,19 +146,12 @@ const foot = `${stageLine()}. Baseline sealed ${sealed}. Data: gol.gg, lolesport
   .pro-phone { display: none; }
   .pro-close { font-size: var(--fs-lg); line-height: 1.5; color: var(--fg2); max-width: 60ch; text-wrap: pretty; }
 
-  .odds { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); column-gap: var(--space-xl); }
-  .odds-row { display: grid; grid-template-columns: 28px 96px minmax(0, 1fr) 72px; align-items: center; gap: var(--space-sm); padding: var(--space-xs) 0; border-top: 1px solid var(--line); }
-  .odds-rank { font-size: var(--fs-sm); }
-  .odds-row .code { font-size: var(--fs-lg); }
-  .odds-p { text-align: right; font-size: var(--fs-lg); }
-
   .risk-short { font-size: var(--fs-lg); line-height: 1.45; text-wrap: pretty; }
   .risk-watch { text-wrap: pretty; }
   .quick { display: flex; flex-direction: column; gap: var(--space-2xs); }
   .quick .rows > .quick-row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-sm); }
   .quick-row > span:last-child { text-align: right; }
   .qv { display: inline-flex; align-items: center; justify-content: flex-end; gap: var(--space-2xs); flex-wrap: wrap; }
-  .oc { display: inline-flex; align-items: center; gap: var(--space-2xs); }
 
   @media (max-width: 640px) {
     /* phone: one column, Pick'Ems first */
@@ -192,10 +166,6 @@ const foot = `${stageLine()}. Baseline sealed ${sealed}. Data: gol.gg, lolesport
     .pro-disc :global(.logo) { width: 44px; height: 44px; }
     .pro-p { gap: var(--space-3xs); }
     .pro-phone { display: block; line-height: 1.5; color: var(--fg2); }
-    .odds-sec .section-head > span { display: none; }
-    .odds-row { grid-template-columns: 84px minmax(0, 1fr) 60px; gap: var(--space-xs); }
-    .odds-row:nth-child(n + 6), .odds-rank { display: none; }
-    .odds-row .bar { height: 5px; }
     .risk-short { font-size: var(--fs-md); }
   }
 </style>
