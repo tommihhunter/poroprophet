@@ -10,6 +10,11 @@ const lock = nextLock();
 const raw = overview().next_lock;
 // phone: the lock chip only on its own stage's page (Phone Pages.dc.html shows it on Swiss only)
 const own = !!lock && active === lock.stage.toLowerCase();
+// desktop: the event and reference pages in the bar, the rest in a More dropdown (a <details>, works without JS)
+const MORE = ['playground', 'demacia-cup', 'scorecard', 'meta'];
+const main = NAV.filter((n) => !MORE.includes(n.id));
+const more = MORE.map((id) => NAV.find((n) => n.id === id)!).filter(Boolean);
+const moreOn = MORE.includes(active);
 ---
 <header class="hdr">
   <div class="hdr-in">
@@ -19,13 +24,24 @@ const own = !!lock && active === lock.stage.toLowerCase();
       <span class="ptitle" aria-hidden="true">{active === 'home' ? 'Poro Prophet' : title}</span>
     </a>
     <nav class="hnav" aria-label="Sections">
-      {NAV.map((n) => <a href={url(n.path)} aria-current={active === n.id ? 'page' : undefined}>{n.label}</a>)}
+      {main.map((n) => <a href={url(n.path)} aria-current={active === n.id ? 'page' : undefined}>{n.label}</a>)}
+      <details class="hmore">
+        <summary class:list={{ on: moreOn }}>{moreOn ? more.find((n) => n.id === active)?.label : 'More'}<svg class="caret" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></summary>
+        <div class="menu">
+          {more.map((n) => <a href={url(n.path)} aria-current={active === n.id ? 'page' : undefined}><span class="t">{n.label}</span><span class="s">{n.desc}</span></a>)}
+        </div>
+      </details>
     </nav>
     {lock
       ? <span class:list={['chip lock hlock', { 'ph-off': !own }]}><span class="full">{lock.stage} lock {lock.day}, {lock.time} NZDT</span><span class="short">Locks {lock.day}</span></span>
       : raw && <span class="chip lock hlock">{raw}</span>}
   </div>
 </header>
+<script is:inline>
+  // close the More dropdown on a click outside it or on Escape
+  document.addEventListener('click', (e) => { const d = document.querySelector('.hmore[open]'); if (d && !e.target.closest('.hmore')) d.open = false; });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.hmore[open]').forEach((d) => { d.open = false; d.querySelector('summary').focus(); }); });
+</script>
 <style>
   .hdr { border-bottom: 1px solid var(--line-head); background: var(--bg); position: sticky; top: 0; z-index: 20; }
   /* same content edge as the page and footer (--wrap) */
@@ -36,22 +52,38 @@ const own = !!lock && active === lock.stage.toLowerCase();
   .word, .ptitle { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-xl); letter-spacing: var(--track-caps); line-height: 1.1; }
   .ptitle { display: none; }
   .hnav { display: flex; flex-wrap: wrap; gap: var(--space-3xs); margin-left: auto; font-family: var(--font-display); font-weight: 700; font-size: var(--fs-sm); letter-spacing: 0.08em; }
-  .hnav a { padding: var(--space-2xs) var(--space-xs); border-radius: var(--radius-nav); color: var(--fg2); white-space: nowrap; }
-  .hnav a:hover { color: var(--gold); }
-  .hnav a:active { color: var(--muted2); }
-  .hnav a[aria-current="page"] { background: var(--gold); color: var(--bg); }
-  .hlock .short { display: none; }
-  /* keep brand, nav and chip on one row (measured with Playground in the nav, 19/10/2026): a tighter nav up to 1640,
-     the short chip up to 1520, no chip up to 1400; it fits on one row down to about 1270, the nav wraps below that */
-  @media (max-width: 1640px) and (min-width: 641px) {
-    .hnav { gap: 0; }
-    .hnav a { padding: var(--space-2xs); }
+  .hnav a, .hmore summary { padding: var(--space-2xs) var(--space-xs); border-radius: var(--radius-nav); color: var(--fg2); white-space: nowrap; }
+  .hnav a:hover, .hmore summary:hover { color: var(--gold); }
+  .hnav a:active, .hmore summary:active { color: var(--muted2); }
+  .hnav > a[aria-current="page"], .hmore summary.on { background: var(--gold); color: var(--bg); }
+  .hmore { position: relative; }
+  .hmore summary { display: flex; align-items: center; gap: var(--space-3xs); cursor: pointer; list-style: none; }
+  .hmore summary::-webkit-details-marker { display: none; }
+  .hmore .caret { transition: transform .15s; }
+  .hmore[open] .caret { transform: rotate(180deg); }
+  .hmore .menu {
+    position: absolute; right: 0; top: calc(100% + var(--space-2xs)); min-width: 280px; display: flex; flex-direction: column; padding: var(--space-2xs);
+    background: var(--surface); border: 1px solid var(--line-head); border-radius: var(--radius); box-shadow: 0 12px 32px var(--scrim);
+    text-transform: none; letter-spacing: 0; font-family: var(--font-body); font-weight: 400;
   }
-  @media (max-width: 1520px) and (min-width: 641px) {
+  .hmore .menu a { display: flex; flex-direction: column; gap: 2px; padding: var(--space-xs) var(--space-sm); white-space: normal; }
+  .hmore .menu .t { font-family: var(--font-display); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: var(--fs-sm); color: var(--fg); }
+  .hmore .menu .s { font-size: var(--fs-sm); color: var(--muted); }
+  .hmore .menu a:hover .t, .hmore .menu a[aria-current="page"] .t { color: var(--gold); }
+  .hmore .menu a { border-radius: var(--radius-sm); }
+  .hmore .menu a:hover { background: var(--hover); }
+  .hlock .short { display: none; }
+  /* keep brand, nav and chip on one row (seven nav items with More, 19/10/2026): a tighter nav up to 1240,
+     the short chip up to 1180, no chip up to 1000; the nav wraps below about 900 */
+  @media (max-width: 1240px) and (min-width: 641px) {
+    .hnav { gap: 0; }
+    .hnav a, .hmore summary { padding: var(--space-2xs); }
+  }
+  @media (max-width: 1180px) and (min-width: 641px) {
     .hlock .full { display: none; }
     .hlock .short { display: inline; }
   }
-  @media (max-width: 1400px) and (min-width: 641px) { .hlock { display: none; } }
+  @media (max-width: 1000px) and (min-width: 641px) { .hlock { display: none; } }
   @media (max-width: 640px) {
     .hdr { border-bottom-color: var(--line-strong); }
     .hdr-in { min-height: 0; padding: var(--space-xs) var(--gutter); flex-wrap: nowrap; gap: var(--space-xs); }

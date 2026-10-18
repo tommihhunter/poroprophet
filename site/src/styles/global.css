@@ -15,6 +15,8 @@
 /* the hidden attribute always wins over a component's display (cards, panels and tiles set display: flex or grid) */
 [hidden] { display: none !important; }
 html { overflow-x: clip; -webkit-text-size-adjust: 100%; }
+/* desktop scale: every size is in px, so the page is drawn at 90% (the owner's "Chrome at 90% feels right", 19/10/2026); phones keep 100% */
+@media (min-width: 641px) { html { zoom: 0.9; } }
 body {
   margin: 0; overflow-x: clip; min-height: 100vh; display: flex; flex-direction: column;
   background: var(--bg); color: var(--fg);
