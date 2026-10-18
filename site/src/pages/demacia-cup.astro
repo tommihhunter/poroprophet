@@ -17,6 +17,10 @@ const ddmm = (s: unknown) => String(s ?? 'UNKNOWN').replace(/\/\d{4}$/, '');
 
 // Partial-data line: series count, then the row note that says what is missing
 const partial = (rows.find((r) => /^Partial/i.test(r.note || ''))?.note ?? String(sum?.note ?? '')).replace(/^Partial:\s*/i, '');
+const isPartial = rows.some((r) => /^Partial/i.test(r.note || ''));
+const fin = rows.findLast((r) => r.stage === 'Final');
+const loser = fin && (fin.actual_winner === fin.team_a ? fin.team_b : fin.team_a);
+const fullText = `All ${rows.length} series, Swiss round 1 to the final${fin ? `, which ${fin.actual_winner} won ${fin.actual_score} against ${loser}` : ''}.`;
 const partialText = `${rows.length} series so far. ${partial.charAt(0).toUpperCase()}${partial.slice(1)}${/\.$/.test(partial) ? '' : '.'}`;
 
 // Region matchups from each row's regions and hit, regions in a fixed order
@@ -33,7 +37,7 @@ for (const r of rows) {
 const pairs = [...pairMap.values()].sort((x, y) => y.n - x.n || y.hits - x.hits || x.k.split(' v ').map(rk).join() .localeCompare(y.k.split(' v ').map(rk).join(), 'en', { numeric: true }));
 
 // What it taught us: how the Bo5 score calls went
-const WORD = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'];
+const WORD = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'];
 const word = (n: number) => WORD[n] ?? String(n);
 const bo5 = rows.filter((r) => r.bo === 5);
 const calls = [...new Set(bo5.map((r) => r.score_call))];
@@ -42,7 +46,7 @@ const exact = bo5.filter((r) => r.hit && r.score_call === r.actual_score).length
 const all5 = bo5.length === 2 ? 'Both' : `All ${bo5.length}`;
 const lesson = !bo5.length
   ? 'No Bo5 has finished yet, so the score calls are still untested.'
-  : `${bo5.length === 1 ? `The one Bo5 was called ${calls[0]} and went ${went[0]}.` : calls.length === 1 && went.length === 1 ? `${all5} Bo5s were called ${calls[0]} and ${all5.toLowerCase()} went ${went[0]}.` : `${exact} of ${bo5.length} Bo5 score calls were exact.`} ${word(bo5.length)} series is too few to change the model, but it is the first thing the Play-In calibration will check.`;
+  : `${bo5.length === 1 ? `The one Bo5 was called ${calls[0]} and went ${went[0]}.` : calls.length === 1 && went.length === 1 ? `${all5} Bo5s were called ${calls[0]} and ${all5.toLowerCase()} went ${went[0]}.` : `${exact ? `${exact} of ${bo5.length}` : `None of the ${bo5.length}`} Bo5 score calls ${exact === 1 ? 'was' : 'were'} exact: ${went.map((w) => `${bo5.filter((r) => r.actual_score === w).length} went ${w}`).join(', ')}.`} ${word(bo5.length)} series ${bo5.length === 1 ? 'is' : 'are'} too few to change the model, but it is the first thing the Play-In calibration will check.`;
 
 const tiles = sum ? [
   { k: 'Winners called', v: `${sum.hits ?? 'UNKNOWN'} / ${sum.n ?? 'UNKNOWN'}`, sub: `${pct(sum.hit_rate as number)} hit rate`, c: '' },
@@ -61,8 +65,8 @@ const tiles = sum ? [
     </div>
     {sum && (
       <div class="callout part">
-        <span class="eyebrow">Partial data</span>
-        <span>{partialText}</span>
+        <span class="eyebrow">{isPartial ? 'Partial data' : 'Full event'}</span>
+        <span>{isPartial ? partialText : fullText}</span>
       </div>
     )}
   </section>

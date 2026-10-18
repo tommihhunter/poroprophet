@@ -92,8 +92,8 @@ def main(write=True):
                    hit_rate=round(sum(r["hit"] for r in out) / m, 4) if m else None,
                    unknown_teams=", ".join(sorted(unknown)) or "none", skipped_series="; ".join(skipped) or "none",
                    n_bo5=sum(bo5_act.values()),
-                   note=f"{m} hand-compiled series; event still in progress and the file is partial (Swiss R3/R4, other QFs, "
-                        "SF/Final not found as of 15/10/2026); DCGI teams are those that missed Worlds", **common)
+                   note=f"{m} hand-compiled series, the full event from Swiss round 1 to the final (complete 19/10/2026); "
+                        "DCGI teams are those that missed Worlds", **common)
     for key, v in sorted(pairs.items()):
         k = key.replace(" ", "_")
         summary.update({f"pair_{k}_n": v["n"], f"pair_{k}_first_region_wins": v["first_wins"], f"pair_{k}_model_hits": v["model_hits"]})
