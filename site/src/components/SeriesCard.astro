@@ -67,7 +67,9 @@ const attrs = detail ? { type: 'button', 'data-show': detail, 'aria-controls': d
     <Logo code={fav} size={24} />
     <span class="code">{fav}</span>
     <span class="vs">v {nm(dog)}</span>
-    <span class="big pv">{r ? `${hi}-${lo}` : pct(s.p_winner)}</span>
+    {r ? <span class="big pv">{hi}-{lo}</span> : (
+      <span class="big pv">{rows.map((x, i) => <>{i > 0 && <span class="sep"> · </span>}<span class:list={['pn', { lead: i === lead }]}>{x.right}</span></>)}</span>
+    )}
   </span>
 </Tag>
 <style>
@@ -98,7 +100,11 @@ const attrs = detail ? { type: 'button', 'data-show': detail, 'aria-controls': d
     .line { align-items: center; gap: var(--space-2xs); min-width: 0; }
     .line .code { font-size: var(--fs-lg); }
     .vs { font-size: var(--fs-sm); color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
-    .pv { margin-left: auto; font-size: var(--fs-xl); }
+    .pv { margin-left: auto; font-size: var(--fs-xl); white-space: nowrap; }
+    /* before a result: both chances, the favourite's --fg, the other --muted */
+    .pn { color: var(--muted); }
+    .pn.lead { color: var(--fg); }
+    .sep { color: var(--dim); }
     /* knockouts: no round meta, a compact one-line card */
     .sc:not(:has(.meta.ph)) { border-radius: var(--radius-sm); }
     .sc:not(:has(.meta.ph)) .code { font-size: var(--fs-md); }

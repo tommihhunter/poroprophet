@@ -1,5 +1,5 @@
 ---
-/* "Live now / Up next": the next open series (settled pairings, our pick and its chance) and the latest result.
+/* "Live now / Up next": the next open series (settled pairings, both teams' chances, our pick in gold) and the latest result.
    The site only rebuilds when a result lands, so the state is worked out in the browser from each start time:
    before the start "Starts in 2h 10m", from the start "Live", from 5 hours after it "Result pending" (a Bo5 rarely
    runs past 4 hours). Built-in results always win: a played series never shows here. Renders nothing when no
@@ -43,7 +43,11 @@ const short = (nz: string) => nz.replace(/^(\d\d\/\d\d)\/\d{4}/, '$1').replace(/
         </span>
         <span class="lv-meta">
           <span class="caption">{s.stage.replace(/^Play-In /, '')}, {short(when)} NZDT</span>
-          {s.winner && s.p_winner != null && <span class="lv-pick">Our pick <span class="code">{s.winner}</span> <span class="gold">{pct(s.p_winner)}</span></span>}
+          {s.winner && s.p_winner != null && (
+            <span class="lv-pick">
+              {[s.team_a, s.team_b].map((c, j) => <>{j > 0 && <span class="muted"> · </span>}<span class:list={{ muted: c !== s.winner }}><span class="code">{c}</span> <span class:list={{ gold: c === s.winner }}>{pct(c === s.winner ? s.p_winner : 1 - s.p_winner!)}</span></span></>)}
+            </span>
+          )}
         </span>
       </a>
     ))}
