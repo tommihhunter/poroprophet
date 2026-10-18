@@ -12,24 +12,28 @@ interface Props { s: Series; detail?: string; selected?: boolean; final?: boolea
 const { s, detail, selected = false, final = false, round, label, large = false } = Astro.props;
 // half-settled slot (lib/stage.ts settlePlayIn): team_b is 'TBD', shown as s.tbd ("MVK or FURIA"), known team first
 const tbd = s.team_b === 'TBD';
-const fav = tbd ? s.team_a : s.winner || s.team_a;
+const pick = tbd ? s.team_a : s.winner || s.team_a;
 const nm = (c: string) => (c === 'TBD' ? s.tbd ?? 'TBD' : c);
-const dog = fav === s.team_a ? s.team_b : s.team_a;
 const r = resultFor(s);
+// once played the winner reads first (desktop top row, phone line), so "FURIA v C9 3-1" never reads as a C9 win
+const fav = r ? r.winner : pick;
+const dog = fav === s.team_a ? s.team_b : s.team_a;
 const goals = (code: string) => (!r ? null : r.team_a === code ? r.score_a : r.score_b);
 const [gf, gd] = [goals(fav), goals(dog)];
-const pa = tbd ? (s.p_series_a == null ? null : Math.round(s.p_series_a * 100)) : s.p_winner == null ? null : Math.round(s.p_winner * 100);
+const pp = tbd ? (s.p_series_a == null ? null : Math.round(s.p_series_a * 100)) : s.p_winner == null ? null : Math.round(s.p_winner * 100);
+const pa = pp == null || fav === pick ? pp : 100 - pp; // pre-match split from the top row's side
 const when = startNz(s).match(/^(\d\d\/\d\d)\/\d{4} (\d\d:\d\d)/);
 const time = when ? `${when[1]} ${when[2]}` : 'UNKNOWN';
 // later Play-In rounds: the model's pairing (favourites win earlier rounds) until the bracket settles it
 const assumed = !r && /predicted pairing/i.test(s.stage);
-const hit = !!r && r.winner === fav;
+const hit = !!r && r.winner === pick;
+const tag = hit ? 'Called it' : `Picked ${pick}, wrong`;
 const hi = r ? Math.max(Number(r.score_a), Number(r.score_b)) : 0;
 const lo = r ? Math.min(Number(r.score_a), Number(r.score_b)) : 0;
 const note = tbd ? s.tbd_note ?? '' : !r
   ? `Likeliest ${fav} ${s.score || 'UNKNOWN'} (${pct(s.p_score)})`
-  : hit ? `Called it. Score call ${s.score} ${`${hi}-${lo}` === s.score ? 'hit' : 'missed'}` : `Missed. ${r.winner} won ${hi}-${lo}`;
-const lead = r ? (r.winner === dog ? 1 : 0) : tbd && (s.p_series_a ?? 1) < 0.5 ? 1 : 0;
+  : hit ? `Called it. Score call ${s.score} ${`${hi}-${lo}` === s.score ? 'hit' : 'missed'}` : `Picked ${pick}, wrong.`;
+const lead = r ? 0 : tbd && (s.p_series_a ?? 1) < 0.5 ? 1 : 0;
 const rows = [
   { code: fav, right: r ? String(gf ?? 'UNKNOWN') : tbd ? pct(s.p_series_a) : pct(s.p_winner) },
   { code: dog, right: r ? String(gd ?? 'UNKNOWN') : tbd ? (s.p_series_a == null ? 'UNKNOWN' : pct(1 - s.p_series_a)) : s.p_winner == null ? 'UNKNOWN' : pct(1 - s.p_winner) },
@@ -41,7 +45,7 @@ const attrs = detail ? { type: 'button', 'data-show': detail, 'aria-controls': d
   {round && (
     <span class="meta ph">
       <span>{label ?? round}, {time}</span>
-      {r ? <span class:list={['tag', hit ? 'teal' : 'risk']}>{hit ? 'Called it' : 'Missed'}</span> : !tbd && <Tier tier={s.tier} />}
+      {r ? <span class:list={['tag', hit ? 'teal' : 'risk']}>{tag}</span> : !tbd && <Tier tier={s.tier} />}
     </span>
   )}
   <span class="meta dt"><span>{label ? `${label}, ` : ''}<span class="nw">{time}</span></span>{!tbd && <Tier tier={s.tier} />}</span>

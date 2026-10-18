@@ -27,7 +27,8 @@ const span = dates.length ? `${dates[0].slice(0, 5)} to ${dates.at(-1)}` : 'UNKN
 const teams = ratings().filter((r) => r.p_playin != null);
 const lv = new Map(live().map((l) => [l.team, l]));
 const useLive = teams.some((t) => lv.get(t.code)?.p_playin_win != null);
-const odds = teams.map((t) => ({ code: t.code, p: useLive ? (lv.get(t.code)?.p_playin_win ?? null) : t.p_playin })).sort((a, b) => (b.p ?? -1) - (a.p ?? -1));
+// a team missing from the live odds once they exist has been knocked out
+const odds = teams.map((t) => ({ code: t.code, p: useLive ? (lv.get(t.code)?.p_playin_win ?? null) : t.p_playin, out: useLive && lv.get(t.code)?.p_playin_win == null })).sort((a, b) => (b.p ?? -1) - (a.p ?? -1));
 const top = Math.max(...odds.map((o) => o.p ?? 0)) || 1;
 const liveStamp = useLive ? lv.get(teams[0].code)?.generated_nz : null;
 
@@ -54,11 +55,11 @@ const footer = `Predicted ${createdNz} (${v.set === 'baseline' ? 'frozen baselin
       <span class="eyebrow">Who wins the Play-In</span>
       <div class="rows">
         {odds.map((o) => (
-          <div class="wr">
+          <div class:list={['wr', { out: o.out }]}>
             <Logo code={o.code} size={28} />
             <span class="code">{o.code}</span>
             <span class="bar"><i style={`width:${(((o.p ?? 0) / top) * 100).toFixed(0)}%`}></i></span>
-            <span class="r num">{pct(o.p)}</span>
+            <span class="r num">{o.out ? 'Out' : pct(o.p)}</span>
           </div>
         ))}
       </div>
@@ -117,6 +118,8 @@ const footer = `Predicted ${createdNz} (${v.set === 'baseline' ? 'frozen baselin
   .wr { display: grid; grid-template-columns: 28px 80px minmax(0, 1fr) 56px; align-items: center; gap: var(--space-xs); }
   .wr .code { font-size: var(--fs-lg); line-height: var(--lh-tight); }
   .wr .r { text-align: right; font-size: var(--fs-lg); }
+  .wr.out { color: var(--muted); }
+  .wr.out :global(img) { opacity: .45; }
   .pick { display: flex; flex-direction: column; gap: var(--space-xl); min-width: 0; }
   /* columns share the bracket's rows (subgrid), so every card in a row is the same height */
   .bracket { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-xs) var(--space-md); }
