@@ -112,7 +112,8 @@ const footer = `Predicted ${createdNz} (${v.set === 'baseline' ? 'frozen baselin
 </Base>
 <style>
   /* top-aligned so the eyebrow and h1 sit where they do on every other page */
-  .top { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--space-lg) var(--space-2xl); align-items: start; }
+  /* the top sits on the bracket's four-column grid: intro and live card over columns 1-2, the odds panel over 3-4, so every edge lines up */
+  .top { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-lg) var(--space-md); align-items: start; }
   .intro { display: flex; flex-direction: column; gap: var(--space-sm); }
   .intro .lede { max-width: 56ch; }
   /* the live card sits under the lede, filling the left column beside the odds panel */
