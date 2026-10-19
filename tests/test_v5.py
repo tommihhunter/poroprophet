@@ -216,6 +216,11 @@ def test_hubs_rematch_and_fallbacks():
         dash = os.path.join(tmp, "dash")
         shutil.copytree(os.path.join(ROOT, "data", "dash"), dash)
         os.remove(os.path.join(dash, "dcgi.json"))
+        # Swiss and Knockouts staged runs carry the real Play-In pairings (and results), which the fabricated rematch below
+        # would contradict: keep the baseline and Play-In sets only, so the test holds before and after those runs
+        sp = os.path.join(dash, "series.json")
+        rows = [s for s in json.load(open(sp, encoding="utf-8")) if not str(s.get("set")).startswith(("swiss", "knockouts"))]
+        json.dump(rows, open(sp, "w", encoding="utf-8"))
         res = [dict(id="PI-R1-A", phase="Play-In", kind="series", stage="Play-In R1", start_nz="16/10/2026 07:00", team_a="KC", team_b="C9", score_a=3, score_b=1, winner="KC"),
                dict(id="PI-GF", phase="Play-In", kind="series", stage="Play-In final", start_nz="19/10/2026 07:00", team_a="KC", team_b="C9", score_a=2, score_b=3, winner="C9")]
         json.dump(res, open(os.path.join(dash, "results.json"), "w", encoding="utf-8"))
@@ -228,8 +233,8 @@ def test_hubs_rematch_and_fallbacks():
         detail = lambda i: re.findall(rf'id="sd-{i}".*?</section>', html, re.S)   # SeriesDetail panel per series
         assert detail("PI-R1-A") and all("Final: KC 3-1" in x for x in detail("PI-R1-A"))
         assert detail("PI-GF") and all("Final: C9 3-2" in x and "Final: KC 3-1" not in x for x in detail("PI-GF"))   # id AND pair, never pair alone
-        # baseline Swiss rows say they are preliminary; once a Swiss staged run is exported the page says it was re-run
-        assert "preliminary until the re-run" in page("swiss") or "Re-run after the round 1 draw" in page("swiss")
+        # with the Swiss and Knockouts sets dropped above, the Swiss page shows the baseline rows and says they are preliminary
+        assert "preliminary until the re-run" in page("swiss")
         assert "Check not run yet." in page("demacia-cup")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -262,6 +267,8 @@ def test_live_state_parse():
         match("2026-10-23T17:00:00Z", "inProgress", "Swiss", 3, team("TL", "Team Liquid", 1), team("XYZ", "Nobody", 0)),
         match("2026-10-14T10:59:00Z", "completed", "Play-Ins", 5, team("KC", "Karmine Corp", 3), team("C9", "Cloud9", 2)),  # 14/10 23:59 NZDT
         {"startTime": "2026-10-20T00:00:00Z", "state": "completed", "type": "show", "blockName": "Show"},
+        {"startTime": "not a time", "state": "unstarted", "type": "match", "match": {"teams": [{}, {}]}},   # malformed: skipped
+        "not an event",                                                                                   # malformed: skipped
     ]
     unknown = set()
     rows = LS.parse(events, "19/10/2026 12:00", unknown)

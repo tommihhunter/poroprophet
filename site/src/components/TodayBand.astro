@@ -18,7 +18,7 @@ import { nzMs, riotRow } from '../lib/live';
 import { pct } from '../lib/format';
 import { url } from '../lib/url';
 
-type Game = { a: string; b: string; label: string; start: string | null; day: string; pa: number | null; pick: string | null; res: { w: string; wg: number; lg: number; riot: boolean } | null; live: [number, number] | null; riot: string | null; href: string };
+type Game = { a: string; b: string; label: string; start: string | null; day: string; pa: number | null; pick: string | null; res: { w: string; wg: number; lg: number; riot: boolean } | null; done: boolean; live: [number, number] | null; riot: string | null; href: string };
 const used = new Set<Sched>();
 const games: Game[] = [];
 const ymd = (d: string) => d.split('/').reverse().join('');
@@ -34,7 +34,9 @@ function add(a: string, b: string, bo: number | null, label: string, start: stri
   const res = r?.winner
     ? { w: r.winner, wg: Math.max(Number(r.score_a), Number(r.score_b)), lg: Math.min(Number(r.score_a), Number(r.score_b)), riot: false }
     : rr?.state === 'completed' && wa !== wb ? { w: wa > wb ? a : b, wg: Math.max(wa, wb), lg: Math.min(wa, wb), riot: true } : null;
-  games.push({ a, b, label: bo ? `${label}, Bo${bo}` : label, start: t, day: d, pa, pick, res, live: !res && rr?.state === 'inProgress' ? [wa, wb] : null, riot: rr?.state ?? null, href: hub(label) });
+  // Riot completed with no clear winner in its game wins: still finished (never Live from the clock), result to follow
+  const done = !!res || rr?.state === 'completed';
+  games.push({ a, b, label: bo ? `${label}, Bo${bo}` : label, start: t, day: d, pa, pick, res, done, live: !done && rr?.state === 'inProgress' ? [wa, wb] : null, riot: rr?.state ?? null, href: hub(label) });
 }
 
 // Play-In and Knockouts: settled pairings of the latest staged run (knockout ties only from a real knockouts run)
@@ -69,6 +71,10 @@ const day = days.includes(today) ? today : days.find((d) => ymd(d) > ymd(today))
 const head = !day ? '' : `${day === today ? 'Today' : ymd(day) > ymd(today) ? 'Next up' : 'Last played'}, ${day.slice(0, 5)}`;
 const list = games.filter((g) => g.day === day).sort((x, y) => (x.start ?? '99').localeCompare(y.start ?? '99'));
 const fetched = schedule()[0]?.fetched_nz;
+// columns per row: a count that fills every row where one exists (5 in a row, 6 as 3 + 3, 8 as 4 + 4; 2 x 2 or 3 at the
+// middle width); an odd remainder (7, or 5 at the middle width) stretches across its row instead of leaving a gap
+const n = list.length;
+const cw = n <= 5 ? n : Math.ceil(n / 2), cm = n <= 3 ? n : n % 2 ? 3 : 2;
 const iso = (t: string | null) => { const ms = t ? nzMs(t) : null; return ms == null ? undefined : new Date(ms).toISOString(); };
 
 const cards = list.map((g) => {
@@ -84,10 +90,12 @@ const cards = list.map((g) => {
     lead: g.live ? x.n! >= sides[1 - i].n! : i === 0,
   }));
   const hit = g.res && g.pick ? g.res.w === g.pick : null;
-  const note = !g.res ? null : hit == null ? { t: 'No call', c: 'muted' } : hit ? { t: 'Called it', c: 'teal' } : { t: `Picked ${g.pick}, wrong`, c: 'risk' };
-  const state = g.res ? 'done' : g.live ? 'live' : undefined;
-  const when = g.res ? 'Finished' : g.live ? 'Live now' : g.start ? `${g.start.slice(11)} NZDT` : 'Time UNKNOWN';
-  return { g, rows, note, state, when };
+  const note = !g.res ? (g.done ? { t: 'Result to follow', c: 'muted' } : null) : hit == null ? { t: 'No call', c: 'muted' } : hit ? { t: 'Called it', c: 'teal' } : { t: `Picked ${g.pick}, wrong`, c: 'risk' };
+  const state = g.done ? 'done' : g.live ? 'live' : undefined;
+  // the label (Finished, Live now, or the browser's countdown) sits beside the NZDT start time, which always shows
+  const when = g.done ? 'Finished' : g.live ? 'Live now' : '';
+  const time = g.start ? `${g.start.slice(11)} NZDT` : 'Time UNKNOWN';
+  return { g, rows, note, state, when, time };
 });
 ---
 {list.length > 0 && (
@@ -96,12 +104,12 @@ const cards = list.map((g) => {
       <h2>{head}</h2>
       <span>Times in NZDT{fetched && `. Match state from Riot at ${fetched.replace(/\s*NZDT$/, '')}`}</span>
     </div>
-    <ul class:list={['tb-list', { many: list.length > 2 }]} style={`--cols:${list.length <= 4 ? list.length : Math.ceil(list.length / 2)}`}>
-      {cards.map(({ g, rows, note, state, when }) => (
+    <ul class="tb-list" style={`--cm:${cm};--cw:${cw}`}>
+      {cards.map(({ g, rows, note, state, when, time }) => (
         <li>
           <a class="card tg" href={g.href} data-phase={state} data-start={state ? undefined : iso(g.start)} data-riot={g.riot ?? undefined}>
             <span class="tg-meta">
-              <span class="tg-when"><i class="dot" aria-hidden="true"></i><span data-state>{when}</span></span>
+              <span class="tg-when"><i class="dot" aria-hidden="true"></i><span data-state>{when}</span><span class="tg-time">{time}</span></span>
               <span class="tg-label">{g.label}</span>
             </span>
             {rows.map((x, i) => (
@@ -136,17 +144,23 @@ const cards = list.map((g) => {
 </script>
 <style>
   .tb { display: flex; flex-direction: column; gap: var(--space-sm); container-type: inline-size; }
-  .tb-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-xs); }
-  .tb-list > li { display: flex; min-width: 0; }
+  /* equal widths per full row (--c columns), each card sized by its own width (container queries on the li) */
+  .tb-list { --c: 1; --g: var(--space-xs); list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--g); }
+  .tb-list > li { display: flex; min-width: 0; flex: 1 1 calc((100% - (var(--c) - 1) * var(--g)) / var(--c)); container-type: inline-size; }
+  @container (min-width: 600px) { .tb-list { --c: var(--cm); --g: var(--space-sm); } }
+  @container (min-width: 960px) { .tb-list { --c: var(--cw); } }
 
-  /* phone: a compact row per game, when and round on top, then team v team facing each other, the note under them */
+  /* compact (phone, and two or three to a row): when and round on top, team v team facing each other, the note under */
   .tg {
     display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'meta meta' 'a b' 'note note';
-    align-items: center; gap: var(--space-3xs) var(--space-sm); padding: var(--space-xs) var(--space-sm);
+    align-items: center; align-content: start; gap: var(--space-3xs) var(--space-sm); padding: var(--space-xs) var(--space-sm);
   }
-  .tg-meta { grid-area: meta; display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-2xs); min-width: 0; font-size: var(--fs-sm); color: var(--muted); line-height: 1.3; }
-  .tg-when { display: inline-flex; align-items: center; gap: var(--space-2xs); font-weight: 600; color: var(--fg2); }
+  .tg-meta { grid-area: meta; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--space-3xs) var(--space-2xs); min-width: 0; font-size: var(--fs-sm); color: var(--muted); line-height: 1.3; }
+  .tg-when { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-2xs); font-weight: 600; color: var(--fg2); }
   .tg-label { font-size: var(--fs-xs); }
+  .tg-when [data-state]:empty { display: none; }
+  .tg-time { font-weight: 400; }
+  .tg-when [data-state]:not(:empty) + .tg-time { color: var(--muted); }
   .dot { display: none; width: 8px; height: 8px; border-radius: 50%; background: var(--live); flex: none; }
   .tg-team { display: flex; align-items: center; gap: var(--space-2xs); min-width: 0; color: var(--muted); }
   .tg-team.a { grid-area: a; }
@@ -166,21 +180,18 @@ const cards = list.map((g) => {
   .tg[data-phase="done"] .tg-when, .tg[data-phase="pending"] .tg-when { color: var(--muted); }
   @keyframes pulse { 50% { opacity: 0.3; } }
 
-  @container (min-width: 600px) {
-    .tb-list { gap: var(--space-sm); }
-    /* one or two games: a wide row each, side by side */
-    .tb-list:not(.many) { grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); }
-    .tb-list:not(.many) .tg { grid-template-columns: 8rem minmax(0, 13rem) minmax(0, 13rem) minmax(0, 1fr); grid-template-areas: 'meta a b note'; gap: 0 var(--space-md); padding: var(--space-sm) var(--space-md); }
-    .tb-list:not(.many) .tg-meta { flex-direction: column; justify-content: center; align-items: flex-start; gap: var(--space-3xs); }
-    .tb-list:not(.many) .tg-note { padding: 0 0 0 var(--space-sm); text-align: right; }
-    /* three or more: equal tiles, two rows for a full Swiss round */
-    .many { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .many .tg { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'meta' 'a' 'b' 'note'; gap: var(--space-2xs); padding: var(--space-sm) var(--space-md); align-content: start; }
-    .many .tg-team.b { flex-direction: row; }
-    .many .tg-team.b .tg-v { margin: 0 0 0 auto; }
-    .many .tg-note { padding-top: var(--space-2xs); border-top: 1px solid var(--line); }
+  /* narrow tile (four or more to a row): when, then each team on its own line, the note under a rule */
+  @container (max-width: 339.98px) {
+    .tg { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'meta' 'a' 'b' 'note'; gap: var(--space-2xs); padding: var(--space-sm) var(--space-md); }
+    .tg-meta { flex-direction: column; align-items: flex-start; }
+    .tg-team.b { flex-direction: row; }
+    .tg-team.b .tg-v { margin: 0 0 0 auto; }
+    .tg-note { padding-top: var(--space-2xs); border-top: 1px solid var(--line); }
   }
-  @container (min-width: 960px) {
-    .many { grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); }
+  /* one game across a wide band: one line, when | team | team | note */
+  @container (min-width: 900px) {
+    .tg { grid-template-columns: 10rem minmax(0, 13rem) minmax(0, 13rem) minmax(0, 1fr); grid-template-areas: 'meta a b note'; gap: 0 var(--space-md); padding: var(--space-sm) var(--space-md); align-content: center; }
+    .tg-meta { flex-direction: column; justify-content: center; align-items: flex-start; }
+    .tg-note { padding: 0 0 0 var(--space-sm); text-align: right; }
   }
 </style>

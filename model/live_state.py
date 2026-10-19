@@ -39,20 +39,23 @@ def parse(events, fetched_nz, unknown=None):
     unknown = set() if unknown is None else unknown
     rows = {}
     for e in events:
-        m = e.get("match") or {}
-        if e.get("type") != "match" or len(m.get("teams") or []) != 2:
-            continue
-        utc = dt.datetime.strptime(e["startTime"], "%Y-%m-%dT%H:%M:%SZ")
-        if utc + NZ < FROM_NZ:
-            continue
-        a, b = m["teams"]
-        rows[m.get("id") or e["startTime"] + a.get("code", "") + b.get("code", "")] = {
-            "start_utc": e["startTime"], "start_nz": (utc + NZ).strftime("%d/%m/%Y %H:%M"),
-            "block": e.get("blockName") or "UNKNOWN", "state": e.get("state") or "UNKNOWN",
-            "bo": (m.get("strategy") or {}).get("count"),
-            "team_a": code(a, unknown), "team_b": code(b, unknown),
-            "wins_a": (a.get("result") or {}).get("gameWins") or 0, "wins_b": (b.get("result") or {}).get("gameWins") or 0,
-            "fetched_nz": fetched_nz}
+        try:
+            m = e.get("match") or {}
+            if e.get("type") != "match" or len(m.get("teams") or []) != 2:
+                continue
+            utc = dt.datetime.strptime(e["startTime"], "%Y-%m-%dT%H:%M:%SZ")
+            if utc + NZ < FROM_NZ:
+                continue
+            a, b = m["teams"]
+            rows[m.get("id") or e["startTime"] + a.get("code", "") + b.get("code", "")] = {
+                "start_utc": e["startTime"], "start_nz": (utc + NZ).strftime("%d/%m/%Y %H:%M"),
+                "block": e.get("blockName") or "UNKNOWN", "state": e.get("state") or "UNKNOWN",
+                "bo": (m.get("strategy") or {}).get("count"),
+                "team_a": code(a, unknown), "team_b": code(b, unknown),
+                "wins_a": int((a.get("result") or {}).get("gameWins") or 0), "wins_b": int((b.get("result") or {}).get("gameWins") or 0),
+                "fetched_nz": fetched_nz}
+        except Exception as x:  # noqa: BLE001  Riot's payload shape is unverified: skip the one event, keep the rest
+            print(f"live_state: skipped a malformed event ({type(x).__name__}: {x}): {str(e)[:200]}")
     return sorted(rows.values(), key=lambda r: (r["start_utc"], r["team_a"], r["team_b"]))
 
 
@@ -65,8 +68,8 @@ def fetch():
             sched = json.load(r)["data"]["schedule"]
         events += sched["events"]
         token = (sched.get("pages") or {}).get("older")
-        first = min((dt.datetime.strptime(e["startTime"], "%Y-%m-%dT%H:%M:%SZ") for e in events), default=None)
-        if not token or (first and first + NZ < FROM_NZ):
+        first = min((e["startTime"] for e in events if isinstance(e, dict) and isinstance(e.get("startTime"), str)), default=None)
+        if not token or (first and first < (FROM_NZ - NZ).strftime("%Y-%m-%dT%H:%M:%SZ")):   # ISO strings sort by time
             break
         time.sleep(0.4)
     return events
