@@ -56,32 +56,25 @@ const assumption = r1Drawn ? null
 
   <div id="pg" class="pg">
     <noscript><p class="panel">The playground needs JavaScript. The <a class="gold" href={url('swiss/')}>Swiss page</a> has the bracket and our picks without it.</p></noscript>
-    <section class="section" aria-labelledby="pg-stage">
+    <section class="section pg-road" aria-labelledby="pg-road-h">
       <div class="section-head">
-        <h2 id="pg-stage">Round 1</h2>
-        <span id="pg-progress" aria-live="polite"></span>
+        <h2 id="pg-road-h">Your bracket</h2>
+        <span>Earlier rounds change only via Undo.</span>
       </div>
       <div class="pg-bar">
+        <p class="pg-now"><span id="pg-stage" class="code">Swiss round 1</span><span id="pg-progress" aria-live="polite"></span></p>
         <div class="pg-acts">
           <button type="button" class="pg-btn" data-act="model" title="Fill the open series with the model's favourites">Model picks</button>
           <button type="button" class="pg-btn" data-act="roll" title="Fill the open series by the model's chances">Roll</button>
           <button type="button" class="pg-btn pri" data-act="lock">Lock in</button>
-        </div>
-        <div class="pg-acts">
           <button type="button" class="pg-btn" data-act="undo">Undo</button>
           <button type="button" class="pg-btn" data-act="reset">Reset</button>
+          <button type="button" class="pg-btn" data-act="end" title="Roll every open series and lock in every round through the final. One Undo goes back to here.">Roll to the end</button>
         </div>
       </div>
-      <div id="pg-champ" class="pg-champ panel" hidden></div>
-      <div id="pg-round" class="pg-round"></div>
-    </section>
-
-    <section class="section" aria-labelledby="pg-st-h">
-      <div class="section-head">
-        <h2 id="pg-st-h">Standings</h2>
-        <span>Swiss records with your picks so far</span>
+      <div class="scroll pg-sc" tabindex="0" role="region" aria-label="Your bracket, scrolls sideways">
+        <div id="pg-road" class="pg-road-in"></div>
       </div>
-      <div id="pg-standings" class="pg-standings panel"></div>
     </section>
 
     <section class="section pg-odds" aria-labelledby="pg-odds-h">
@@ -104,7 +97,13 @@ const assumption = r1Drawn ? null
 <style is:global>
   .pg-note { max-width: 80ch; }
   .pg { display: flex; flex-direction: column; gap: var(--space-xl); min-width: 0; }
-  .pg-bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-xs); }
+  /* control bar: sticky under the site header on desktop (Header.astro .hdr, 76px plus its border), above the bottom bar on phone */
+  .pg-bar {
+    position: sticky; top: 77px; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: var(--space-2xs) var(--space-sm); padding: var(--space-2xs) 0; background: var(--bg); border-bottom: 1px solid var(--line);
+  }
+  .pg-now { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-3xs) var(--space-xs); font-size: var(--fs-sm); color: var(--muted); }
+  .pg-now .code { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lg); color: var(--fg); }
   .pg-acts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2xs); }
   .pg-btn {
     appearance: none; cursor: pointer; min-height: 44px; padding: var(--space-2xs) var(--space-sm); border-radius: var(--radius-pill);
@@ -117,42 +116,69 @@ const assumption = r1Drawn ? null
   .pg-btn.pri:not(:disabled):hover { background: var(--gold); color: var(--bg); }
   .pg-btn:disabled { cursor: default; opacity: 0.4; }
 
-  .pg-round { display: flex; flex-direction: column; gap: var(--space-md); }
+  /* the road: Swiss rounds, Through / Out, then the knockout bracket, side by side (scrolls inside .pg-sc) */
+  .pg-sc { position: relative; padding-bottom: var(--space-2xs); }
+  .pg-road-in { display: flex; align-items: flex-start; gap: var(--space-xs); width: max-content; }
+  .rd { display: flex; flex-direction: column; gap: var(--space-xs); width: 184px; flex: none; padding: var(--space-xs); border-radius: var(--radius); }
+  .rd > summary { display: none; }
+  .rd.cur { background: color-mix(in srgb, var(--surface) 55%, var(--bg)); }
+  .rd-head { display: flex; flex-direction: column; gap: 2px; padding-bottom: var(--space-2xs); border-bottom: 1px solid var(--line-strong); }
+  .rd-head h3 { font-size: var(--fs-md); color: var(--muted2); white-space: nowrap; }
+  .rd.cur .rd-head h3 { color: var(--fg); }
+  .rd-head p { font-size: var(--fs-xs); color: var(--muted); white-space: nowrap; }
+  .rd.cur .rd-head p { color: var(--fg2); font-weight: 600; }
+  .rd-head h3.teal { color: var(--teal); }
+  .rd-head h3.risk { color: var(--risk); }
   .pg-group { display: flex; flex-direction: column; gap: var(--space-2xs); }
-  .pg-gh { display: flex; gap: var(--space-xs); align-items: baseline; font-size: var(--fs-sm); color: var(--muted); }
-  .pg-gh .code { color: var(--fg2); font-size: var(--fs-md); }
-  .pg-ms { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-xs); }
-  .pg-m { display: flex; flex-direction: column; gap: 2px; padding: var(--space-3xs); background: var(--surface); border-radius: var(--radius-sm); box-shadow: var(--inset); }
+  .pg-gh { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--fs-sm); color: var(--muted); }
+  .pg-gh .code { color: var(--fg2); }
+  .pg-ms { display: flex; flex-direction: column; gap: var(--space-2xs); }
+  .pg-m { display: flex; flex-direction: column; padding: var(--space-3xs); background: var(--surface); border-radius: var(--radius-sm); box-shadow: var(--inset); }
+  /* a team row: a button in the current round, a plain row everywhere else */
   .pg-t {
-    appearance: none; display: flex; align-items: center; gap: var(--space-2xs); width: 100%; min-height: 44px; padding: var(--space-3xs) var(--space-xs);
-    border: 0; border-radius: var(--radius-bar); background: transparent; color: var(--fg); text-align: left; cursor: pointer;
-    transition: color 120ms ease, background-color 120ms ease;
+    appearance: none; display: flex; align-items: center; gap: var(--space-2xs); width: 100%; min-height: 32px; padding: var(--space-3xs) var(--space-2xs);
+    border: 0; border-radius: var(--radius-bar); background: transparent; color: var(--muted); text-align: left;
   }
-  .pg-t:hover { background: var(--hover); }
-  .pg-t:active { background: var(--line-strong); }
-  .pg-t:focus-visible { outline-offset: -2px; }
-  .pg-t .code { flex: 1 1 auto; min-width: 0; font-size: var(--fs-lg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pg-t .code { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pg-t.win { color: var(--fg); }
+  div.pg-t:not(.win) .logo, div.pg-t:not(.win) .disc { opacity: 0.6; }
+  button.pg-t { min-height: 40px; color: var(--fg); cursor: pointer; transition: color 120ms ease, background-color 120ms ease; }
+  button.pg-t:hover { background: var(--hover); }
+  button.pg-t:active { background: var(--line-strong); }
+  button.pg-t:focus-visible { outline-offset: -2px; }
+  button.pg-t[aria-pressed="true"] { background: var(--line-head); }
+  .pg-m.picked button.pg-t[aria-pressed="false"] { color: var(--muted); }
+  .pg-m.picked button.pg-t[aria-pressed="false"] .logo, .pg-m.picked button.pg-t[aria-pressed="false"] .disc { opacity: 0.5; }
+  button.pg-t:disabled { cursor: default; }
+  button.pg-t:disabled:hover { background: transparent; }
+  button.pg-t[aria-pressed="true"]:disabled:hover { background: var(--line-head); }
   .pg-t .v { font-weight: 600; font-size: var(--fs-sm); color: var(--muted); }
   .pg-t .v.fav { color: var(--fg); }
-  .pg-t[aria-pressed="true"] { background: var(--line-head); }
-  .pg-m.picked .pg-t[aria-pressed="false"] { color: var(--muted); }
-  .pg-m.picked .pg-t[aria-pressed="false"] .logo, .pg-m.picked .pg-t[aria-pressed="false"] .disc { opacity: 0.5; }
-  .pg-t:disabled { cursor: default; }
-  .pg-t:disabled:hover { background: transparent; }
-  .pg-t[aria-pressed="true"]:disabled:hover { background: var(--line-head); }
-  .pg-real { font-size: var(--fs-xs); color: var(--muted); padding: 0 var(--space-xs); }
-
-  .pg-champ { display: flex; align-items: center; gap: var(--space-sm); }
-  .pg-champ .code { font-size: var(--fs-2xl); color: var(--gold); }
-
-  .pg-standings { display: flex; flex-direction: column; padding: var(--space-2xs) var(--space-md); }
-  .pg-rec { display: grid; grid-template-columns: 128px minmax(0, 1fr); align-items: center; gap: var(--space-sm); padding: var(--space-xs) 0; border-top: 1px solid var(--line); min-width: 0; }
-  .pg-rec:first-child { border-top: 0; }
-  .pg-rec h3 { font-size: var(--fs-md); color: var(--muted2); white-space: nowrap; }
-  .pg-rec h3.teal { color: var(--teal); }
-  .pg-rec h3.risk { color: var(--risk); }
+  .pg-real { font-size: var(--fs-xs); color: var(--muted); padding: 0 var(--space-2xs); }
+  /* rounds not drawn yet */
+  .pg-pend { display: flex; flex-direction: column; gap: var(--space-2xs); padding: var(--space-xs); border-radius: var(--radius-sm); border: 1px dashed var(--line-head); }
   .pg-chips { display: flex; flex-wrap: wrap; gap: var(--space-3xs) var(--space-xs); }
-  .pg-chip { display: inline-flex; align-items: center; gap: var(--space-3xs); font-size: var(--fs-sm); }
+  .pg-chip { display: inline-flex; align-items: center; gap: var(--space-3xs); font-size: var(--fs-sm); color: var(--fg2); }
+  .pg-chip .v { color: var(--muted); font-size: var(--fs-xs); }
+  /* Through / Out */
+  .rd.ends { width: 136px; }
+  .pg-list { display: flex; flex-direction: column; gap: var(--space-3xs); }
+
+  /* knockout bracket: every column splits the same height into equal slots, so each card sits level with the pair it
+     comes from; the lines run through the 24px column gap */
+  .ko { display: grid; grid-template-columns: repeat(3, 184px) 200px; gap: var(--space-md); align-items: stretch; }
+  .ko .rd { width: auto; }
+  .ko-slots { flex: 1 1 auto; display: flex; flex-direction: column; }
+  .ko-slot { position: relative; flex: 1 1 0; display: flex; flex-direction: column; justify-content: center; padding: var(--space-3xs) 0; }
+  .ko-l .ko-slot::after { content: ''; position: absolute; left: 100%; width: var(--space-md); border: 0 solid var(--line-head); }
+  .ko-l .ko-slot:nth-child(odd)::after { top: 50%; bottom: 0; border-top-width: 1px; border-right-width: 1px; }
+  .ko-l .ko-slot:nth-child(even)::after { top: 0; bottom: 50%; border-bottom-width: 1px; border-right-width: 1px; }
+  .ko-r .ko-slot::before { content: ''; position: absolute; right: 100%; top: 50%; width: var(--space-md); border-top: 1px solid var(--line-head); }
+  .ko-fin .ko-slot::after { content: ''; position: absolute; left: 100%; top: 50%; width: calc(2 * var(--space-md)); border-top: 1px solid var(--line-head); }
+  .pg-champ { display: flex; flex-direction: column; gap: var(--space-2xs); padding: var(--space-sm); background: var(--surface); border-radius: var(--radius-sm); box-shadow: var(--inset); }
+  .pg-champ .who { display: flex; align-items: center; gap: var(--space-xs); }
+  .pg-champ .code { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-2xl); color: var(--fg); }
+  .pg-champ .path { font-size: var(--fs-sm); color: var(--fg2); }
 
   /* nested bars, the TitleRace look (components/TitleRace.astro) */
   .pg-odds { --s0: color-mix(in srgb, var(--bar-alt) 42%, var(--track)); --s1: color-mix(in srgb, var(--bar-alt) 68%, var(--track)); --s2: var(--bar-alt); --s3: color-mix(in srgb, var(--bar-alt) 55%, var(--fg)); }
@@ -174,13 +200,32 @@ const assumption = r1Drawn ? null
   .pg-row .d.down { color: var(--risk); }
   .pg-row.out { color: var(--muted); }
 
-  @media (max-width: 1100px) { .pg-ms { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 640px) {
-    .pg-ms { gap: var(--space-2xs); }
-    .pg-t { padding: var(--space-3xs) var(--space-2xs); gap: var(--space-3xs); }
-    .pg-rec { grid-template-columns: 120px minmax(0, 1fr); gap: var(--space-xs); }
-    .pg-bar { flex-direction: column; }
-    .pg-acts .pg-btn { flex: 1 1 auto; }
+    /* phone: the bar sits last in the section and sticks above the bottom bar (BottomBar.astro, 78px) */
+    .pg-bar { order: 9; top: auto; bottom: calc(78px + env(safe-area-inset-bottom)); border-bottom: 0; border-top: 1px solid var(--line-strong); }
+    .pg-bar .pg-acts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: var(--space-3xs); }
+    .pg-bar .pg-btn { padding: var(--space-3xs) var(--space-2xs); min-height: 40px; }
+    /* rounds stacked, played rounds folded to one line */
+    .pg-sc { overflow: visible; padding-bottom: 0; }
+    .pg-road-in, .ko { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-xs); width: auto; }
+    .rd, .rd.ends { width: auto; scroll-margin-top: 88px; }
+    .rd > summary {
+      display: flex; align-items: center; gap: var(--space-2xs); min-height: 44px; cursor: pointer; list-style: none;
+      font-size: var(--fs-sm); color: var(--fg2);
+    }
+    .rd > summary::-webkit-details-marker { display: none; }
+    .rd > summary::after { content: '+'; margin-left: auto; color: var(--muted); font-size: var(--fs-lg); }
+    .rd[open] > summary::after { content: '\2212'; }
+    .rd > summary b { font-family: var(--font-display); text-transform: uppercase; letter-spacing: var(--track-caps); color: var(--fg); white-space: nowrap; }
+    details.rd { padding: 0 var(--space-xs); border: 1px solid var(--line); }
+    details.rd[open] { padding-bottom: var(--space-xs); }
+    details.rd > .rd-head { display: none; }
+    .rd .pg-ms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .rd .pg-t { padding: var(--space-3xs); gap: var(--space-3xs); }
+    .ko-slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: var(--space-2xs); }
+    .ko-slot { padding: 0; }
+    .ko-slot::before, .ko-slot::after { display: none; }
+    .rd.ends .pg-list { flex-direction: row; flex-wrap: wrap; gap: var(--space-3xs) var(--space-xs); }
     .pg-leg .pg-leg-d { margin-left: 0; flex-basis: 100%; }
     .pg-row { grid-template-columns: 84px minmax(0, 1fr) 56px 44px; gap: var(--space-xs); }
     .pg-row .rk { display: none; }

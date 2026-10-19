@@ -179,23 +179,32 @@ PG_NEXT = {"Swiss round 1": ("Swiss round 2", ["1-0 4", "0-1 4"]), "Swiss round 
 
 
 def check_playground(browser, target, problems):
-    """Playground at 1440: from whatever stage the real results reach, pick a winner in every open series, lock in,
-    and the next round has the Swiss (or knockout) shape in PG_NEXT; "Run 1,000" then renders one odds row per Swiss
-    team (16). At the final there is nothing to lock in, so only the odds are checked."""
+    """Playground at 1440: from whatever stage the real results reach, pick a winner in every open series of the current
+    round, lock in, and the next round has the Swiss (or knockout) shape in PG_NEXT while the round just locked stays on
+    the road with all its winners; "Run 1,000" then renders one odds row per Swiss team (16); "Roll to the end" reaches
+    the champion card with the quarterfinal, semifinal and final picks on the road. At 390 the road after Roll to the end
+    adds no horizontal page scroll. At the final there is nothing to lock in, so only the odds and the end are checked."""
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     page.on("pageerror", lambda e: problems.append(f"playground: page error: {e}"))
     page.goto(target, wait_until="networkidle")
     start = page.text_content("#pg-stage")
     if start in PG_NEXT:
-        for m in page.locator(".pg-m").all():
+        done = page.get_attribute(".rd.cur", "data-k")
+        for m in page.locator(".rd.cur .pg-m").all():
             if not m.locator(".pg-t[aria-pressed=true]").count():
                 m.locator(".pg-t").first.click()
+        n = page.locator(".rd.cur .pg-m").count()
         page.click("[data-act=lock]")
         stage = page.text_content("#pg-stage")
-        groups = page.evaluate("[...document.querySelectorAll('.pg-group')].map(g => (g.querySelector('.pg-gh .code')?.textContent || 'KO') + ' ' + g.querySelectorAll('.pg-m').length)")
-        print(f"playground @1440: from {start}, lock in shows {stage}: {groups}")
+        groups = page.evaluate("""(() => { const c = document.querySelector('.rd.cur'), gs = [...c.querySelectorAll('.pg-group')];
+          return gs.length ? gs.map(g => g.querySelector('.pg-gh .code').textContent + ' ' + g.querySelectorAll('.pg-m').length)
+            : ['KO ' + c.querySelectorAll('.pg-m').length]; })()""")
+        kept = page.locator(f".rd[data-k='{done}'] .pg-t.win").count()
+        print(f"playground @1440: from {start}, lock in shows {stage}: {groups}; {done} still shows {kept} of {n} winners")
         if (stage, groups) != PG_NEXT[start]:
             problems.append(f"playground @1440: from {start}, lock in shows {stage} {groups}, expected {PG_NEXT[start]}")
+        if kept != n:
+            problems.append(f"playground @1440: after lock in, round {done} shows {kept} winners, expected {n}")
     elif start != "Final":
         problems.append(f"playground @1440: starts at unknown stage {start!r}")
     page.click("[data-run='1000']")
@@ -204,7 +213,26 @@ def check_playground(browser, target, problems):
     print(f"playground @1440: odds from here shows {rows} rows")
     if rows != 16:
         problems.append(f"playground @1440: odds from here shows {rows} rows, expected 16")
+    roll_to_end(page, "playground @1440", problems)
     page.close()
+    page = browser.new_page(viewport={"width": 390, "height": 844})
+    page.goto(target, wait_until="networkidle")
+    roll_to_end(page, "playground @390", problems)
+    wide = page.evaluate(OVERFLOW)
+    if page.evaluate("document.documentElement.scrollWidth > innerWidth + 1") or wide:
+        problems.append(f"playground @390: after Roll to the end, content wider than the viewport: {wide}")
+    page.close()
+
+
+def roll_to_end(page, tag, problems):
+    """Roll to the end: a champion card, and the road holds 4 quarterfinal, 2 semifinal and 1 final winners."""
+    if not page.is_disabled("[data-act=end]"):
+        page.click("[data-act=end]")
+    champ = page.text_content("#pg-champ .path") if page.locator("#pg-champ").count() else None
+    wins = [page.locator(f".rd[data-k='{k}'] .pg-t.win").count() for k in ("QF", "SF", "F")]
+    print(f"{tag}: Roll to the end: champion {champ!r}, knockout winners {wins}")
+    if not champ or wins != [4, 2, 1]:
+        problems.append(f"{tag}: Roll to the end shows champion {champ!r}, knockout winners {wins}, expected [4, 2, 1]")
 
 
 def main():
