@@ -11916,6 +11916,18 @@
 "kind": "international"
 },
 {
+"team_a": "Karmine Corp",
+"team_b": "MVK Esports",
+"score_a": 3,
+"score_b": 0,
+"stage": "ROUND3",
+"patch": "16.20",
+"date": "18/10/2026",
+"tournament": "Worlds 2026 Play-In",
+"league": "INTL",
+"kind": "international"
+},
+{
 "team_a": "MVK Esports",
 "team_b": "FURIA",
 "score_a": 3,

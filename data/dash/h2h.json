@@ -1,5 +1,17 @@
 [
 {
+"a": "KC",
+"b": "MVK",
+"date": "18/10/2026",
+"tournament": "Worlds 2026 Play-In",
+"stage": "ROUND3",
+"sa": 3,
+"sb": 0,
+"bo": 5,
+"patch": "16.20",
+"year": 2026
+},
+{
 "a": "FURIA",
 "b": "MVK",
 "date": "17/10/2026",
