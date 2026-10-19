@@ -133,7 +133,7 @@
 "round": 1,
 "golgg_stage": "ROUND1",
 "date": "23/10/2026",
-"start_nz": null,
+"start_nz": "24/10/2026 06:00",
 "team_a": "IG",
 "team_b": "GEN",
 "score_a": null,
@@ -141,9 +141,9 @@
 "winner": null,
 "bo": 1,
 "source": {
-"url": "UNKNOWN (not yet published online)",
-"note": "Owner, from the Swiss round 1 draw show broadcast; to be checked against the lolesports schedule",
-"accessed": "19/10/2026 10:45 NZDT"
+"url": "https://esports-api.lolesports.com/persisted/gw/getSchedule?hl=en-GB&leagueId=98767975604431411",
+"note": "lolesports schedule (Riot); first entered by the owner from the draw broadcast, confirmed",
+"accessed": "19/10/2026 18:47"
 }
 },
 {
@@ -154,7 +154,7 @@
 "round": 1,
 "golgg_stage": "ROUND1",
 "date": "23/10/2026",
-"start_nz": null,
+"start_nz": "24/10/2026 07:00",
 "team_a": "TLAW",
 "team_b": "CFO",
 "score_a": null,
@@ -162,9 +162,9 @@
 "winner": null,
 "bo": 1,
 "source": {
-"url": "UNKNOWN (not yet published online)",
-"note": "Owner, from the Swiss round 1 draw show broadcast; to be checked against the lolesports schedule",
-"accessed": "19/10/2026 10:45 NZDT"
+"url": "https://esports-api.lolesports.com/persisted/gw/getSchedule?hl=en-GB&leagueId=98767975604431411",
+"note": "lolesports schedule (Riot); first entered by the owner from the draw broadcast, confirmed",
+"accessed": "19/10/2026 18:47"
 }
 },
 {
@@ -175,7 +175,7 @@
 "round": 1,
 "golgg_stage": "ROUND1",
 "date": "23/10/2026",
-"start_nz": null,
+"start_nz": "24/10/2026 08:00",
 "team_a": "AL",
 "team_b": "KC",
 "score_a": null,
@@ -183,9 +183,9 @@
 "winner": null,
 "bo": 1,
 "source": {
-"url": "UNKNOWN (not yet published online)",
-"note": "Owner, from the Swiss round 1 draw show broadcast; to be checked against the lolesports schedule",
-"accessed": "19/10/2026 10:45 NZDT"
+"url": "https://esports-api.lolesports.com/persisted/gw/getSchedule?hl=en-GB&leagueId=98767975604431411",
+"note": "lolesports schedule (Riot); first entered by the owner from the draw broadcast, confirmed",
+"accessed": "19/10/2026 18:47"
 }
 },
 {
@@ -196,7 +196,7 @@
 "round": 1,
 "golgg_stage": "ROUND1",
 "date": "23/10/2026",
-"start_nz": null,
+"start_nz": "24/10/2026 09:00",
 "team_a": "G2",
 "team_b": "DK",
 "score_a": null,
@@ -204,9 +204,9 @@
 "winner": null,
 "bo": 1,
 "source": {
-"url": "UNKNOWN (not yet published online)",
-"note": "Owner, from the Swiss round 1 draw show broadcast; to be checked against the lolesports schedule",
-"accessed": "19/10/2026 10:45 NZDT"
+"url": "https://esports-api.lolesports.com/persisted/gw/getSchedule?hl=en-GB&leagueId=98767975604431411",
+"note": "lolesports schedule (Riot); first entered by the owner from the draw broadcast, confirmed",
+"accessed": "19/10/2026 18:47"
 }
 },
 {
@@ -217,7 +217,7 @@
 "round": 1,
 "golgg_stage": "ROUND1",
 "date": "23/10/2026",
-"start_nz": null,
+"start_nz": "24/10/2026 10:00",
 "team_a": "HLE",
 "team_b": "TES",
 "score_a": null,
@@ -225,9 +225,9 @@
 "winner": null,
 "bo": 1,
 "source": {
-"url": "UNKNOWN (not yet published online)",
-"note": "Owner, from the Swiss round 1 draw show broadcast; to be checked against the lolesports schedule",
-"accessed": "19/10/2026 10:45 NZDT"
+"url": "https://esports-api.lolesports.com/persisted/gw/getSchedule?hl=en-GB&leagueId=98767975604431411",
+"note": "lolesports schedule (Riot); first entered by the owner from the draw broadcast, confirmed",
+"accessed": "19/10/2026 18:47"
 }
 },
 {
@@ -238,7 +238,7 @@
 "round": 1,
 "golgg_stage": "ROUND1",
 "date": "23/10/2026",
-"start_nz": null,
+"start_nz": "24/10/2026 11:00",
 "team_a": "LOS",
 "team_b": "T1",
 "score_a": null,
@@ -246,9 +246,9 @@
 "winner": null,
 "bo": 1,
 "source": {
-"url": "UNKNOWN (not yet published online)",
-"note": "Owner, from the Swiss round 1 draw show broadcast; to be checked against the lolesports schedule",
-"accessed": "19/10/2026 10:45 NZDT"
+"url": "https://esports-api.lolesports.com/persisted/gw/getSchedule?hl=en-GB&leagueId=98767975604431411",
+"note": "lolesports schedule (Riot); first entered by the owner from the draw broadcast, confirmed",
+"accessed": "19/10/2026 18:47"
 }
 },
 {
@@ -259,7 +259,7 @@
 "round": 1,
 "golgg_stage": "ROUND1",
 "date": "23/10/2026",
-"start_nz": null,
+"start_nz": "24/10/2026 12:00",
 "team_a": "LYON",
 "team_b": "TSW",
 "score_a": null,
@@ -267,9 +267,9 @@
 "winner": null,
 "bo": 1,
 "source": {
-"url": "UNKNOWN (not yet published online)",
-"note": "Owner, from the Swiss round 1 draw show broadcast; to be checked against the lolesports schedule",
-"accessed": "19/10/2026 10:45 NZDT"
+"url": "https://esports-api.lolesports.com/persisted/gw/getSchedule?hl=en-GB&leagueId=98767975604431411",
+"note": "lolesports schedule (Riot); first entered by the owner from the draw broadcast, confirmed",
+"accessed": "19/10/2026 18:47"
 }
 },
 {
@@ -280,7 +280,7 @@
 "round": 1,
 "golgg_stage": "ROUND1",
 "date": "23/10/2026",
-"start_nz": null,
+"start_nz": "24/10/2026 13:00",
 "team_a": "BLG",
 "team_b": "MKOI",
 "score_a": null,
@@ -288,9 +288,9 @@
 "winner": null,
 "bo": 1,
 "source": {
-"url": "UNKNOWN (not yet published online)",
-"note": "Owner, from the Swiss round 1 draw show broadcast; to be checked against the lolesports schedule",
-"accessed": "19/10/2026 10:45 NZDT"
+"url": "https://esports-api.lolesports.com/persisted/gw/getSchedule?hl=en-GB&leagueId=98767975604431411",
+"note": "lolesports schedule (Riot); first entered by the owner from the draw broadcast, confirmed",
+"accessed": "19/10/2026 18:47"
 }
 }
 ]
