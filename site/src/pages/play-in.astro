@@ -50,6 +50,7 @@ const footer = `Predicted ${createdNz} (${v.set === 'baseline' ? 'frozen baselin
       <span class="eyebrow">Play-In, Los Angeles, {span} NZDT</span>
       <h1>Four teams, one Swiss spot</h1>
       <p class="lede">Double elimination, every series Bo5 with Fearless Draft. The winner joins the Swiss stage.</p>
+      <LiveNow phase="Play-In" />
     </div>
     <div class="panel win">
       <span class="eyebrow">Who wins the Play-In</span>
@@ -66,7 +67,6 @@ const footer = `Predicted ${createdNz} (${v.set === 'baseline' ? 'frozen baselin
       {liveStamp && <span class="caption">Live odds after the results so far, {liveStamp}.</span>}
     </div>
   </section>
-  <LiveNow phase="Play-In" />
 
   <div class="pick" data-select>
     <section class="section">
@@ -113,7 +113,10 @@ const footer = `Predicted ${createdNz} (${v.set === 'baseline' ? 'frozen baselin
 <style>
   /* top-aligned so the eyebrow and h1 sit where they do on every other page */
   .top { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--space-lg) var(--space-2xl); align-items: start; }
+  .intro { display: flex; flex-direction: column; gap: var(--space-sm); }
   .intro .lede { max-width: 56ch; }
+  /* the live card sits under the lede, filling the left column beside the odds panel */
+  .intro :global(.live) { margin-top: var(--space-sm); }
   .win { display: flex; flex-direction: column; gap: var(--space-2xs); }
   .wr { display: grid; grid-template-columns: 28px 80px minmax(0, 1fr) 56px; align-items: center; gap: var(--space-xs); }
   .wr .code { font-size: var(--fs-lg); line-height: var(--lh-tight); }

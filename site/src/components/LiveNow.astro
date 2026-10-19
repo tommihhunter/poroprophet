@@ -40,7 +40,7 @@ const hub = (st: { id: string }) => url(`${st.id}/`);
 const short = (nz: string) => nz.replace(/^(\d\d\/\d\d)\/\d{4}/, '$1').replace(/\s*NZDT$/, '');
 ---
 {(known.length > 0 || riotLine) && (
-  <section class="live" aria-label="Live now and up next" data-live>
+  <section class="live" aria-label="Live now and up next" data-live data-n={Math.min(known.length, 3)}>
     {known.map(({ s, st, when, at, rs }, i) => {
       const live = rs?.state === 'inProgress', ended = rs?.state === 'completed';
       return (
@@ -98,5 +98,8 @@ const short = (nz: string) => nz.replace(/^(\d\d\/\d\d)\/\d{4}/, '$1').replace(/
   .lv-tag { font-size: var(--fs-xs); letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg2); }
   .lv-score { font-family: var(--font-display); font-variant-numeric: tabular-nums; color: var(--live); }
   .lv-last { grid-column: 1 / -1; }
+  /* fewer cards fill the row: one card takes the full width, two split 2:1 (no empty half-width gap) */
+  .live[data-n="0"], .live[data-n="1"] { grid-template-columns: minmax(0, 1fr); }
+  .live[data-n="2"] { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
   @media (max-width: 900px) { .live { grid-template-columns: minmax(0, 1fr); } }
 </style>
