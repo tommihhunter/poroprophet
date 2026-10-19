@@ -299,8 +299,12 @@ w("swiss", rows)
 
 # pick'ems
 rows = []
-for p in glob.glob("data/pickems_*.json"):
-    P = J(p)
+# Each stage's picks come from the run made for that stage: Play-In from pickems_playin.json (locked 16/10), Swiss from
+# pickems_swiss.json once the staged Swiss run exists, else the preliminary Swiss block of the Play-In run. Every
+# pickems_<stage>.json carries both blocks, so reading them all would list each pick twice.
+PK = {s: J(f"data/pickems_{s}.json") for s in ("playin", "swiss") if os.path.exists(f"data/pickems_{s}.json")}
+if PK.get("playin"):
+    P = PK["playin"]
     slot_ids = {"R1: KC vs C9": "PI-R1-A", "R1: FURIA vs MVK": "PI-R1-B", "Winners' match": "PI-WM",
                 "Elimination match": "PI-EM", "Lower final": "PI-LF", "Final (Play-In winner)": "PI-GF"}
     for i, k in enumerate(P["playin"]["picks"]):
@@ -309,8 +313,10 @@ for p in glob.glob("data/pickems_*.json"):
                          points=10 if "Final" in k["slot"] else 5,
                          alternatives=", ".join(f"{t} {v:.0%}" for t, v in k["alternatives"].items()),
                          status="FINAL - lock 16/10/2026 07:00 NZDT"))
+P = PK.get("swiss") or PK.get("playin")
+if P:
     sp = P["swiss_preliminary"]
-    probs = {r["team"]: r for r in J("data/dash/ratings.json")} if False else None
+    swiss_run = P is PK.get("swiss")
     order = 1
     for cat, teams_ in sp["picks"].items():
         rank = {"3-0": sp["rank_3_0"], "0-3": sp["rank_0_3"]}.get(cat, sp["rank_3_1_or_3_2"])
@@ -319,7 +325,8 @@ for p in glob.glob("data/pickems_*.json"):
             rows.append(dict(stage="Swiss", order=order, slot={"3-0": "3-0", "0-3": "0-3"}.get(cat, "Advance (3-1 or 3-2)"), slot_id="SW-" + cat, pick=tm, p_correct=pm.get(tm),
                              ev_points=None, points=None,
                              alternatives=", ".join(f"{t} {v:.0%}" for t, v in rank[:5]),
-                             status="PRELIMINARY - re-run after the 18/10 draw, lock 24/10/2026 06:00 NZDT"))
+                             status=("SWISS RUN - after the round 1 draw, lock 24/10/2026 06:00 NZDT" if swiss_run
+                                     else "PRELIMINARY - re-run after the 18/10 draw, lock 24/10/2026 06:00 NZDT")))
             order += 1
 w("pickems", rows)
 
@@ -328,6 +335,17 @@ _W = "wards.lol 2026 stats for the 19 Worlds teams, 1,590 games (https://wards.l
 w("crystal", [dict(c, reason=c["reason"].replace(_W, "wards.lol")) for c in base["crystal_ball"]])
 
 # overview (key/value)
+def _next_lock():
+    """The next Pick'Ems lock still ahead at export time (the bot exports at least once per NZDT day); '' once both passed.
+    Lock times from research/format.md (Riot primer, accessed 15/10/2026). The site reads this for Home's Pick'Ems panel
+    and the stage in play (site/src/lib/nav.ts)."""
+    nz = dt.timezone(dt.timedelta(hours=13))
+    now = dt.datetime.now(nz)
+    locks = [("Swiss Pick'Ems lock 24/10/2026 06:00 NZDT (draw 18/10)", dt.datetime(2026, 10, 24, 6, 0, tzinfo=nz)),
+             ("Knockouts Pick'Ems lock 04/11/2026 11:00 NZDT (draw 31/10)", dt.datetime(2026, 11, 4, 11, 0, tzinfo=nz))]
+    return next((text for text, at in locks if now < at), "")
+
+
 risk = base["single_biggest_risk"]
 bt4 = J("data/backtest_v4.json")["A_international"]
 sha = open("data/predictions_baseline.sha256").read().split()[0]
@@ -344,7 +362,7 @@ kv = [
     ("backtest_note", "67 international series, walk-forward: log loss 0.616 (v4) vs 0.622 for 'stronger region wins 70%' and 0.693 for a coin flip"),
     ("region_gap_lck_lpl", f"+{rat['region_gaps']['LCK-LPL']['gap']:.2f} logit, sd {rat['region_gaps']['LCK-LPL']['sd']:.2f}"),
     ("w_regular", rat["params"].get("w_regular")), ("sigma_series", rat["params"].get("sigma_series")),
-    ("next_lock", "Swiss Pick'Ems lock 24/10/2026 06:00 NZDT (draw 18/10)"),
+    ("next_lock", _next_lock()),
     ("draft_modes", "Fearless Draft (champions picked earlier in a series unavailable to both teams) in every Bo3 and Bo5: Play-In, Swiss Bo3s, knockouts. Swiss Bo1s use standard draft. Right of First Selection: holder picks side or pick order (research/rules_2026.md)"),
     ("pickems_points", "Play-In 5/5/5/5/5 + 10 for the final = 35. Swiss 10 per correct advancer (80) + 45 in record bonuses (split UNKNOWN) = 125. Knockouts 10 per QF, 20 per SF, 80 for the final = 160. Crystal Ball points per question UNKNOWN"),
     ("locks_nz", "Play-In + Crystal Ball 16/10/2026 07:00; Swiss 24/10/2026 06:00; Knockouts 04/11/2026 11:00 (all NZDT)"),

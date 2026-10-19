@@ -186,6 +186,25 @@ def test_dcgi_check_summary():
     assert s["n"] >= 10 and 0 < s["logloss"] < 1, s
 
 
+def test_pickems_export_one_set_per_stage():
+    # every pickems_<stage>.json carries a Play-In and a Swiss block: the export must still list each pick once
+    import shutil, subprocess
+    swiss = os.path.join(ROOT, "data", "pickems_swiss.json")
+    made = not os.path.exists(swiss)
+    if made:
+        shutil.copy(os.path.join(ROOT, "data", "pickems_playin.json"), swiss)
+    try:
+        out = subprocess.run([sys.executable, "-X", "utf8", "model/export_dashboard.py"], cwd=ROOT, capture_output=True, text=True)
+        assert out.returncode == 0, out.stderr[-800:]
+        pk = json.load(open(os.path.join(ROOT, "data", "dash", "pickems.json"), encoding="utf-8"))
+        n = {s: sum(1 for r in pk if r["stage"] == s) for s in ("Play-In", "Swiss")}
+        assert n == {"Play-In": 6, "Swiss": 10}, n
+        assert all(r["status"].startswith("SWISS RUN") for r in pk if r["stage"] == "Swiss")
+    finally:
+        if made:
+            os.remove(swiss)
+
+
 def test_exports_h2h_matchups_report():
     import subprocess
     out = subprocess.run([sys.executable, "-X", "utf8", "model/export_dashboard.py"], cwd=ROOT, capture_output=True, text=True)

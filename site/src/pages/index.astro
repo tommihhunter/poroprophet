@@ -9,7 +9,7 @@ import TodayBand from '../components/TodayBand.astro';
 import { live, overview, ratings, teamName } from '../lib/data';
 import { pickemPoints, resultRows } from '../lib/grading';
 import { NAV, lockStage, stageLine } from '../lib/nav';
-import { STAGES, view } from '../lib/stage';
+import { STAGES, knockoutsOutcome, lockPick, view } from '../lib/stage';
 import { swissState } from '../lib/swiss';
 import { icon } from '../lib/icons';
 import { pct } from '../lib/format';
@@ -54,6 +54,14 @@ const lead = champRow?.headline?.split(/\s*[(;,]/)[0]?.trim() || (champRow ? `${
 const best = eloRank === 1 ? 'with the best rating in the field' : eloRank > 1 ? `with the ${ORD[eloRank] ?? `number ${eloRank}`} best rating in the field` : 'rating UNKNOWN';
 const closing = cp == null ? '' : `${lead}, ${best}, yet ${noun} is not a certainty. ${others}`;
 
+// After the final the prophecy gives way to the outcome (the stage pages do the same): the champion, the final, the
+// sealed baseline's chance for them (the one gold number) and our Pick'Ems champion pick.
+const done = knockoutsOutcome();
+const lp = lockPick('Knockouts');
+const doneSeal = done ? rt.find((r) => r.code === done.winner) : null;
+const doneLine = done ? `Beat ${teamName(done.loser)} ${done.score ?? '(score UNKNOWN)'} in the final${done.riot ? ', official stats to follow' : ''}.` : '';
+const doneClose = done && lp ? (lp.pick === done.winner ? `Called it: our Pick'Ems champion pick was ${teamName(lp.pick)}, ${pct(lp.p)} at the lock.` : `Our Pick'Ems champion pick was ${teamName(lp.pick)} (${pct(lp.p)} at the lock), wrong.`) : '';
+
 // Likeliest final: KO-F of the latest staged run (the frozen baseline until a run has knockouts), hidden once either
 // team is out (absent from the live odds or eliminated in the Swiss): no staged run follows the QFs or SFs.
 const out = new Set(swissState().eliminated.map((e) => e.team));
@@ -71,7 +79,7 @@ const tally = (hs: (boolean | null | undefined)[]) => { const h = hs.filter((x):
 const called = [...new Set(rr.map((r) => r.phase))].map((phase) => {
   const mine = rr.filter((r) => r.phase === phase);
   const v = tally(mine.map((r) => r.staged?.hit ?? r.hit)), base = tally(mine.map((r) => r.hit));
-  return { k: `${phase} winners called`, v, sub: base !== v ? `Frozen baseline ${base}` : '' };
+  return { k: `${phase} winners called`, v, sub: base !== v && !base.endsWith(' of 0') ? `Frozen baseline ${base}` : '' };
 }).filter((x) => !x.v.endsWith(' of 0'));
 const points = pickemPoints().filter((p) => p.possible > 0).map((p) => ({
   k: `${p.stage} Pick'Ems points`, v: `${p.earned} of ${p.max ?? 'UNKNOWN'}`, sub: p.max != null && p.possible < p.max ? `${p.possible} decided so far` : '',
@@ -101,21 +109,31 @@ const foot = `${stageLine()}. Baseline sealed ${sealed}. Data: gol.gg, lolesport
   <section class="home">
     <div class="stack">
       <header class="hero">
-        <span class="eyebrow">The prophecy for Worlds 2026</span>
-        <h1 class="orb">The orb favours {champName}</h1>
-        <p class="pro-line">{line1}</p>
+        <span class="eyebrow">{done ? 'Worlds 2026' : 'The prophecy for Worlds 2026'}</span>
+        <h1 class="orb">{done ? `${teamName(done.winner)} win Worlds 2026` : `The orb favours ${champName}`}</h1>
+        <p class="pro-line">{done ? doneLine : line1}</p>
       </header>
-      <div class="pro-stat">
-        <span class="disc pro-disc" style="--s:104px">{champ && <Logo code={champ} size={64} alt={champName} />}</span>
-        <div class="pro-p">
-          <span class="big gold pro-pct">{pct(cp, 1)}</span>
-          <span class="muted2">to win Worlds{isLive ? ', live' : ''}</span>
-          {sealLine && <span class="caption">{sealLine}</span>}
+      {done ? (
+        <div class="pro-stat">
+          <span class="disc pro-disc" style="--s:104px"><Logo code={done.winner} size={64} alt={teamName(done.winner)} /></span>
+          <div class="pro-p">
+            <span class="big gold pro-pct">{doneSeal ? pct(doneSeal.p_champion, 1) : 'UNKNOWN'}</span>
+            <span class="muted2">our title chance for them at the seal, {sealDay}</span>
+          </div>
         </div>
-      </div>
-      {closing && <p class="pro-close">{closing}</p>}
-      <TitleRace top={8} />
-      {finalLine && <p class="caption">{finalLine}</p>}
+      ) : (
+        <div class="pro-stat">
+          <span class="disc pro-disc" style="--s:104px">{champ && <Logo code={champ} size={64} alt={champName} />}</span>
+          <div class="pro-p">
+            <span class="big gold pro-pct">{pct(cp, 1)}</span>
+            <span class="muted2">to win Worlds{isLive ? ', live' : ''}</span>
+            {sealLine && <span class="caption">{sealLine}</span>}
+          </div>
+        </div>
+      )}
+      {done ? doneClose && <p class="pro-close">{doneClose}</p> : closing && <p class="pro-close">{closing}</p>}
+      {!done && <TitleRace top={8} />}
+      {!done && finalLine && <p class="caption">{finalLine}</p>}
     </div>
     <div class="stack side">
       <section class="panel flush msf" aria-label="The model so far">

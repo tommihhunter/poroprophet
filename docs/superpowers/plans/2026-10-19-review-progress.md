@@ -1,0 +1,156 @@
+# Combined review ec3b727..HEAD: what the interrupted review had covered (19/10/2026)
+
+The review agent (Sonnet max, workflow wf_fd59c148-e3f) ran about 75 minutes and reached 'Collect line numbers for the findings'.
+Its findings were not saved. A rerun can skip the areas below and spot-check them instead. Steps in order:
+
+- Locate repo and list recent commits
+- Show working tree status and diff stat
+- List repo top level and site dir
+- Read HANDOVER.md
+- Read adaptive stages plan
+- Read HANDOVER.md
+- Read adaptive stages plan
+- Read playground road and ideas plans
+- Read home rework plan
+- Read stage.ts, live.ts, swiss.ts
+- Read data.ts and grading.ts
+- Read live_state.py and update.yml diff
+- Read full update.yml
+- Read live_state.py and update.yml diff
+- Read full update.yml
+- Inspect fetch_art constants, team_map, dash dir, schedule.json
+- Check export_dashboard cleanup and test_v5 diff
+- Read astro config, gitignore, package.json, test_v5 head
+- Start site build in background
+- Diff play-in.astro
+- Start site build in background
+- Diff play-in.astro
+- Check build log
+- Locate build output
+- Check build log and dist
+- Inspect results and series sets
+- Inspect results_live history and Swiss R1 staging commit
+- Read TodayBand.astro
+- Try fetching Riot schedule read-only into scratchpad
+- Read index.astro (Home)
+- Read update_results.py
+- Read swiss.astro
+- Read knockouts.astro
+- Read swiss.astro
+- Read knockouts.astro
+- Read LiveNow and PlayInTree
+- Read SeriesCard and SeriesDetail
+- Read LiveNow and PlayInTree
+- Read SeriesCard and SeriesDetail
+- Find users of SeriesDetail and SeriesCard
+- List site source tree and read select.js
+- Read playground.astro
+- Read playground.js with line numbers
+- Read old playground.js (before diff)
+- Find zoom rules and read Base layout
+- Read check_site.py first part
+- Read check_site.py second part
+- Run check_site.py in background
+- Diff SwissBracket, SwissPools, TitleRace, PickemsPanel, Header
+- Run check_site.py in background
+- Diff SwissBracket, SwissPools, TitleRace, PickemsPanel, Header
+- Check for leftover follow.js references
+- Show check_site results
+- Locate check log output
+- Run check_site.py synchronously
+- How results.json is exported
+- Series times for Play-In and KO rows
+- How predict.py emits Swiss rows
+- Read predict.py Swiss series emission
+- List screenshots and sizes
+- Check playwright, node, python versions and scratchpad path
+- Peek at existing scratch helpers
+- Diff grading.ts, data.ts, swiss.ts
+- Diff LiveNow.astro
+- Diff grading.ts, data.ts, swiss.ts
+- Diff LiveNow.astro
+- Create rv2 scratch dir with fake-clock preload and fixture generator
+- Create build script and generate first fixtures
+- Build f1 and f2 fixtures
+- Probe Home Today band in fixture f1
+- Probe Play-In page in fixture f1 (Riot-only final)
+- Build fixture f3 (Swiss R1 in progress) with fake clock 24/10 09:30
+- Probe Home in fixture f3
+- Read nav.ts
+- Check .section and .page CSS
+- Measure playground road fit with classic scrollbars at several widths
+- Check that the playground road keeps its shape through the main flows
+- Take playground road screenshots at several states
+- Probe Swiss page in fixture f3
+- Generate full-Swiss and knockouts fixtures
+- Build f4, f5b, f5c fixtures with fake clocks
+- Probe Swiss-done fixture f4 on Swiss, Home, Knockouts
+- Probe Knockouts after-state with bot-style ids
+- Check Pick'Ems slot ids
+- Knockouts slots in pickems.py
+- Read pickems.py
+- Dump all SeriesDetail panel text in fixture f2
+- Check 390px overflow on stage pages across fixtures
+- Screenshot Home at 390 for fixture f3
+- Generate and build fixture f6 (Swiss R2 partially in)
+- Probe Home and Swiss in fixture f6
+- Scan added lines for em and en dashes
+- Scan added diff lines for dash characters with Python
+- Run live_state.py offline: exit code and changed mode
+- Read test_v5 hub/rematch test and helpers
+- Check test_v5 dependencies on staged-run data
+- Export a clean copy of HEAD and junction node_modules
+- Run test_v5 in the isolated repo copy (background)
+- Check test_v5 progress
+- Read test_v5 results
+- Inspect test_v5 log file
+- Run test_v5 synchronously in the repo copy
+- Look at simulate.py CLI and parse_r1
+- Read predict.py series/actual_series helpers
+- Read simulate.py parse_r1 and load_known
+- Run simulate.py for the Swiss staged run in the repo copy
+- Run predict.py --stage swiss in the repo copy
+- Run pickems and export in repo copy; inspect series sets
+- Inspect pickems export and rows after Swiss staged run
+- Build site from the real Swiss-staged-run dash (copy) plus Riot fixture
+- Probe Play-In page in the Swiss-staged world
+- Dump Play-In details and Home in the Swiss-staged world
+- Rebuild Swiss-staged world at 24/10 05:30 and probe Swiss and Home
+- Prepare helper for Knockouts staged-run fixture
+- Create gen module and KO staging script
+- Run Knockouts staged run in the repo copy
+- Export Knockouts-staged world and build it
+- Probe pages in the Knockouts-staged world before the QFs
+- List pickems and predictions files in the real repo; export script history
+- Read old SeriesDetail for comparison
+- Build Knockouts worlds k2 (SFs done) and k3 (final done)
+- Probe Knockouts and Home in the all-done Knockouts world
+- Run the playground phone flow and capture states
+- Run check_site.py against the Riot-completed-final fixture (f1)
+- Run check_site.py against fixtures f2, f3, f4
+- Run check_site.py against fixtures f6, s1, k1, k3
+- Run shape check on the mid-Swiss real state (f6)
+- Check whether README/HANDOVER mention the new pieces
+- Scan diff for employer mentions and trailers
+- Read PickemsPanel
+- Check the header More dropdown at several widths
+- Home prophecy when live odds hold only the champion
+- How live.py decides which teams appear in live.json
+- Check live.json team coverage and simulate output teams
+- Home prophecy with two finalists left
+- Collect line numbers for the findings
+- Read publish.yml and ops dir
+- Check Knockouts cards at 390 for hit/miss text and compare to old SeriesCard
+- Screenshot the Play-In tree at 1100 and 1000 widths
+- Run astro check for type errors
+- Scan fixture worlds at 1280 for console errors and overflow
+- Run the real live.py with a finished tournament and inspect live.json
+
+## Targeted review by the head (19/10/2026, after the interruption)
+Followed the interrupted review's last probes. Fixed (commit below):
+- Home after the final: the prophecy gave "Title chance: UNKNOWN." and "yet 100.0% is not a certainty" once one team is left; Home now leads with "<Champion> win Worlds 2026", the final, the sealed chance and our Pick'Ems champion call.
+- check_site counted a Play-In / Knockouts final as over only from results.json; the site also counts Riot "completed" (schedule.json), so the check would have blocked every publish between Riot finishing a final and gol.gg posting it.
+- export_dashboard read every data/pickems_*.json: after `pickems.py --stage swiss` both the Play-In and Swiss picks would be listed twice; each stage now comes from its own run (test_pickems_export_one_set_per_stage).
+- overview next_lock was a fixed string (Swiss 24/10), so after the lock Home kept the Swiss Pick'Ems and liveStage stayed on Play-In; it is now chosen by date at export time.
+- "Frozen baseline 0 of 0" under the model-so-far tallies hidden.
+Checked and fine: Play-In tree at 1000 and 1100, Knockouts after-state at 390 (semifinalists UNKNOWN only in a fixture without semifinal results), playground card count constant (57) across states, header dropdown widths.

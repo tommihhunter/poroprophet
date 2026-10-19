@@ -41,6 +41,18 @@ OVERFLOW = """(() => {
 })()"""
 
 
+def riot_final_done(dash, block):
+    """The site also counts Riot's schedule (schedule.json) as a result once a match is completed with a winner
+    (lib/stage.ts riotOutcome), so a final Riot has finished but gol.gg has not posted yet is over too."""
+    f = os.path.join(dash, "schedule.json")
+    if not os.path.exists(f):
+        return False
+    with open(f, encoding="utf-8") as fh:
+        rows = [r for r in json.load(fh) if r.get("block") == block]
+    last = max(rows, key=lambda r: r.get("start_utc") or "", default=None)
+    return bool(last) and last.get("state") == "completed" and last.get("wins_a") != last.get("wins_b") and "TBD" not in (last.get("team_a"), last.get("team_b"))
+
+
 def check_play_in(page, tag, problems):
     """Play-In: clicking a card shows exactly its detail panel and marks only that card pressed."""
     cards = page.locator("[data-show]")
@@ -55,7 +67,7 @@ def check_play_in(page, tag, problems):
     # the double-elimination tree holds all six series; the top leads with the outcome only once the final has a result
     dash = os.environ.get("W26_DASH") or os.path.join(ROOT, "data", "dash")
     with open(os.path.join(dash, "results.json"), encoding="utf-8") as fh:
-        final = any(r.get("id") == "PI-GF" and r.get("winner") for r in json.load(fh))
+        final = any(r.get("id") == "PI-GF" and r.get("winner") for r in json.load(fh)) or riot_final_done(dash, "Play-Ins")
     n = page.locator(".tree [data-show]").count()
     h1 = page.locator("h1").inner_text()
     rows = page.locator(".stand li").count()
@@ -86,7 +98,7 @@ def check_after(page, tag, problems, pg):
         over = sum(1 for w, l in wl.values() if 3 in (w, l)) >= 16
         want, lead, n = "swiss done", ".sw-done li", 16
     else:
-        over = any(r.get("id") == "KO-F" and r.get("winner") for r in rows)
+        over = any(r.get("id") == "KO-F" and r.get("winner") for r in rows) or riot_final_done(dash, "Finals")
         want, lead, n = "win worlds 2026", ".stand li", 4
     h1, got = page.locator("h1").inner_text(), page.locator(lead).count()
     print(f"{tag}: h1 {h1!r}, {got} outcome rows, stage over {over}")
