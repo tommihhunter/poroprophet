@@ -68,6 +68,34 @@ def check_play_in(page, tag, problems):
         problems.append(f"{tag}: Play-In final unplayed but the top shows {rows} standings rows")
 
 
+def check_after(page, tag, problems, pg):
+    """Swiss and Knockouts: the top leads with the outcome only once the stage is over in results.json (Swiss: all 16
+    teams at 3 wins or 3 losses, or 16 swiss_record rows; Knockouts: KO-F has a winner)."""
+    dash = os.environ.get("W26_DASH") or os.path.join(ROOT, "data", "dash")
+    with open(os.path.join(dash, "results.json"), encoding="utf-8") as fh:
+        rows = json.load(fh)
+    if pg == "swiss/":
+        wl = {}
+        for r in rows:
+            if r.get("phase") == "Swiss" and r.get("kind") == "series" and r.get("winner"):
+                for t in (r["team_a"], r["team_b"]):
+                    wl.setdefault(t, [0, 0])[0 if t == r["winner"] else 1] += 1
+        for r in rows:
+            if r.get("kind") == "swiss_record" and r.get("record"):
+                wl[r["team"]] = [int(x) for x in r["record"].split("-")]
+        over = sum(1 for w, l in wl.values() if 3 in (w, l)) >= 16
+        want, lead, n = "swiss done", ".sw-done li", 16
+    else:
+        over = any(r.get("id") == "KO-F" and r.get("winner") for r in rows)
+        want, lead, n = "win worlds 2026", ".stand li", 4
+    h1, got = page.locator("h1").inner_text(), page.locator(lead).count()
+    print(f"{tag}: h1 {h1!r}, {got} outcome rows, stage over {over}")
+    if over and (want not in h1.lower() or got != n):
+        problems.append(f"{tag}: stage over but the top shows {h1!r} with {got} outcome rows (expected {n})")
+    if not over and got:
+        problems.append(f"{tag}: stage not over but the top shows {got} outcome rows")
+
+
 def check_more_sheet(page, tag, problems):
     """Phone More sheet: opens from the tab, closes on Escape and gives focus back to the tab."""
     page.click(".bbar summary")
@@ -331,6 +359,8 @@ def main():
                         check_players_filter(page, tag, problems)
                     if pg == "play-in/" and w == 1280:
                         check_play_in(page, tag, problems)
+                    if pg in ("swiss/", "knockouts/") and w == 1280:
+                        check_after(page, tag, problems, pg)
                     if pg == "" and w in (1280, 390):
                         check_home(page, tag, problems)
                     if pg == "" and w == 390:

@@ -12,7 +12,7 @@
 import Logo from './Logo.astro';
 import { results, schedule, type Result, type Sched } from '../lib/data';
 import { nzToday } from '../lib/grading';
-import { STAGES, resultFor, startNz, view } from '../lib/stage';
+import { STAGES, resultFor, stageState, startNz, view } from '../lib/stage';
 import { pairChance } from '../lib/swiss';
 import { nzMs, riotRow } from '../lib/live';
 import { pct } from '../lib/format';
@@ -68,7 +68,13 @@ for (const rr of schedule().filter((x) => !used.has(x) && x.team_a !== 'TBD' && 
 const today = nzToday();
 const days = [...new Set(games.map((g) => g.day))].sort((x, y) => ymd(x).localeCompare(ymd(y)));
 const day = days.includes(today) ? today : days.find((d) => ymd(d) > ymd(today)) ?? days.at(-1);
-const head = !day ? '' : `${day === today ? 'Today' : ymd(day) > ymd(today) ? 'Next up' : 'Last played'}, ${day.slice(0, 5)}`;
+const ahead = !!day && ymd(day) >= ymd(today);
+// nothing today or ahead, a stage finished and the next not begun (its games not on any schedule yet): Next up points
+// at that stage, and the last day played stays under it
+const nx = ahead ? undefined : STAGES.find((st, i) => i > 0 && stageState(STAGES[i - 1].id) === 'after' && stageState(st.id) === 'before');
+const nxFrom = nx && /^\d\d\/\d\d/.exec(nx.dates)?.[0];
+const last = !day ? '' : `${day === today ? 'Today' : ymd(day) > ymd(today) ? 'Next up' : 'Last played'}, ${day.slice(0, 5)}`;
+const head = nx ? `Next up, ${nxFrom ?? 'UNKNOWN'}` : last;
 const list = games.filter((g) => g.day === day).sort((x, y) => (x.start ?? '99').localeCompare(y.start ?? '99'));
 const fetched = schedule()[0]?.fetched_nz;
 // columns per row: a count that fills every row where one exists (5 in a row, 6 as 3 + 3, 8 as 4 + 4; 2 x 2 or 3 at the
@@ -104,6 +110,12 @@ const cards = list.map((g) => {
       <h2>{head}</h2>
       <span>Times in NZDT{fetched && `. Match state from Riot at ${fetched.replace(/\s*NZDT$/, '')}`}</span>
     </div>
+    {nx && (
+      <>
+        <a class="card tb-next" href={hub(nx.phase)}><span class="code">{nx.title}</span><span class="fg2">{nx.dates}</span></a>
+        <span class="caption">{last}</span>
+      </>
+    )}
     <ul class="tb-list" style={`--cm:${cm};--cw:${cw}`}>
       {cards.map(({ g, rows, note, state, when, time }) => (
         <li>
@@ -145,6 +157,8 @@ const cards = list.map((g) => {
 <style>
   .tb { display: flex; flex-direction: column; gap: var(--space-sm); container-type: inline-size; }
   /* equal widths per full row (--c columns), each card sized by its own width (container queries on the li) */
+  .tb-next { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-3xs) var(--space-sm); padding: var(--space-sm) var(--space-md); }
+  .tb-next .code { font-size: var(--fs-lg); }
   .tb-list { --c: 1; --g: var(--space-xs); list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--g); }
   .tb-list > li { display: flex; min-width: 0; flex: 1 1 calc((100% - (var(--c) - 1) * var(--g)) / var(--c)); container-type: inline-size; }
   @container (min-width: 600px) { .tb-list { --c: var(--cm); --g: var(--space-sm); } }

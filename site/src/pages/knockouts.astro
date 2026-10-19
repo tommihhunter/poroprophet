@@ -7,7 +7,7 @@ import Logo from '../components/Logo.astro';
 import SeriesCard from '../components/SeriesCard.astro';
 import { displayName, overview, ratings, results, series } from '../lib/data';
 import { pct } from '../lib/format';
-import { STAGES, setLabel, startNz, view } from '../lib/stage';
+import { STAGES, knockoutsOutcome, lockPick, setLabel, startNz, view } from '../lib/stage';
 import type { Series } from '../lib/data';
 
 const st = STAGES[2];
@@ -48,8 +48,34 @@ const slot = (s: Series) => {
   return { name: s.id.replace(/^KO-/, '').replace(/^F$/, 'Final'), sides: f ? [`Winner ${f[0]}`, `Winner ${f[1]}`] : ['Swiss qualifier', 'Swiss qualifier'],
     note: f ? `After ${f[0]} and ${f[1]}.` : 'From the Swiss stage and the 31/10 draw.', when: startNz(s).replace(/^(\d\d\/\d\d)\/\d{4}/, '$1') };
 };
+// After the final: the champion leads, with the score, the runner-up and what we had. With no Knockouts Pick'Ems row yet
+// the frozen baseline's title favourite stands in, labelled as such.
+const done = knockoutsOutcome();
+const lockKo = lockPick('Knockouts');
+const fav = [...ratings()].sort((a, b) => (b.p_champion ?? -1) - (a.p_champion ?? -1))[0];
+const call = lockKo ? { pick: lockKo.pick, text: `We had ${lockKo.pick} at ${pct(lockKo.p)} at the lock.` } : fav ? { pick: fav.code, text: `We had ${fav.code} at ${pct(fav.p_champion)} to win it all in the frozen baseline.` } : null;
+const finalDay = (byId.get('KO-F')?.time_nz ?? '').slice(0, 5);
+const stand = done ? [[done.winner, 'Champion'], [done.loser, 'Runner-up'], ...done.semifinalists.map((t) => [t, 'Semifinal'])] : [];
 ---
 <Base title="Knockouts" active="knockouts" description="Eight teams, one cup: the knockout bracket and how far each team goes." footer={{ left: footer }}>
+  {done ? (
+    <section class="top after">
+      <div class="intro">
+        <span class="eyebrow">Final, Brooklyn{finalDay && `, ${finalDay}`}</span>
+        <h1>{done.winner} win Worlds 2026</h1>
+        <p class="lede">Beat {done.loser} {done.score ?? 'UNKNOWN'} in the final{done.riot && ', official stats to follow'}.</p>
+        {call && <p class="muted">{call.text} {call.pick === done.winner ? <span class="teal">Called it.</span> : <span class="risk">Picked {call.pick}, wrong.</span>}</p>}
+      </div>
+      <div class="panel stand">
+        <span class="eyebrow">Final four</span>
+        <ol class="rows">
+          {stand.map(([t, r], i) => (
+            <li class:list={['sr', { out: i > 0 }]}><Logo code={t} size={28} /><span class="code">{t}</span><span class="nx">{r}</span></li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  ) : (
   <section class="top">
     <div class="intro">
       <span class="eyebrow">Knockouts, Allen then Brooklyn, {span} NZDT</span>
@@ -62,7 +88,8 @@ const slot = (s: Series) => {
       <span class="cl-text">{ptsText}. Locks {lockText}{real ? '.' : ', after the draw.'}</span>
     </div>
   </section>
-  <LiveNow phase="Knockouts" />
+  )}
+  {!done && <LiveNow phase="Knockouts" />}
 
   <section class="section">
     <div class="section-head"><h2>Bracket</h2><span>{real ? 'Percent is the chance the upper team wins the series. ' : 'Not decided yet. '}Times NZDT.</span></div>
@@ -131,6 +158,15 @@ const slot = (s: Series) => {
   .pc { display: flex; align-items: center; gap: var(--space-xs); min-width: 0; }
   .pc .bar { flex: 1; }
   .pc .num { width: 56px; text-align: right; }
+  /* after: champion, runner-up and the semifinal losers; the champion's row --fg, the rest --muted */
+  .top.after { align-items: start; }
+  .stand { display: flex; flex-direction: column; gap: var(--space-2xs); }
+  .stand .rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2xs); }
+  .stand .sr { display: grid; grid-template-columns: 28px 80px minmax(0, 1fr); align-items: center; gap: var(--space-xs); }
+  .stand .code { font-size: var(--fs-lg); line-height: var(--lh-tight); }
+  .stand .nx { text-align: right; color: var(--fg2); }
+  .stand .out, .stand .out .nx { color: var(--muted); }
+  .stand .out :global(img) { opacity: .6; }
   @media (max-width: 1000px) { .top { grid-template-columns: minmax(0, 1fr); } }
   @media (max-width: 640px) {
     .bracket { display: flex; flex-direction: column; gap: var(--space-md); min-width: 0; }

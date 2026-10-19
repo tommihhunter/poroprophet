@@ -1,12 +1,13 @@
 ---
 import LiveNow from '../components/LiveNow.astro';
+import Logo from '../components/Logo.astro';
 import Base from '../layouts/Base.astro';
 import PickemsPanel from '../components/PickemsPanel.astro';
 import RecordTable from '../components/RecordTable.astro';
 import SwissBracket from '../components/SwissBracket.astro';
 import SwissPools from '../components/SwissPools.astro';
 import { overview, series, swiss } from '../lib/data';
-import { STAGES, drawPassed, setLabel, swissRecords, view } from '../lib/stage';
+import { STAGES, drawPassed, setLabel, stageState, swissLockPicks, swissRecords, view } from '../lib/stage';
 import { swissState } from '../lib/swiss';
 import { url } from '../lib/url';
 
@@ -32,15 +33,48 @@ const lede = `${rows.length || 'UNKNOWN'} teams. Rounds 1 and 2 are Bo1, decider
 const piw = overview().playin_winner;
 const caption = `Advance is the chance of reaching 3 wins${staged ? ' given the actual draw' : `, averaged over all legal draws${piw ? ` and assuming ${piw} win the Play-In` : ''}`}.`;
 const points = /Swiss [^.]*\./.exec(overview().pickems_points ?? '')?.[0].replace(/^Swiss /, '');
+// After: every team at 3 wins or 3 losses. Through 3-0 first, out 2-3 first; our Pick'Ems against what happened.
+const ss = swissState();
+const done = stageState('swiss') === 'after';
+const through = [...ss.qualified].sort((a, b) => a.record.localeCompare(b.record));
+const out = [...ss.eliminated].sort((a, b) => b.record.localeCompare(a.record));
+const lp = swissLockPicks();
+const inSet = new Set(ss.qualified.map((x) => x.team));
+const adv = lp.filter((x) => x.slot_id !== 'SW-0-3'), p30 = lp.filter((x) => x.slot_id === 'SW-3-0'), p03 = lp.filter((x) => x.slot_id === 'SW-0-3');
+const pickLine = `Our Pick'Ems: ${adv.filter((x) => inSet.has(x.pick)).length} of ${adv.length} advancers through, 3-0 picks ${p30.filter((x) => x.hit).length} of ${p30.length}, 0-3 picks ${p03.filter((x) => x.hit).length} of ${p03.length}.`;
+const span = st.dates.split(' NZDT')[0].replace(/\/\d{4}$/, '');
 const footLeft = `${staged ? `Staged ${setLabel(v.swissSet)}` : 'Frozen baseline'}, predicted ${created}.${points ? ` Points: ${points}` : ''}`;
 ---
 <Base title="Swiss" active="swiss" description="Swiss stage Pick'Ems and every team's likely record." footer={{ left: footLeft }}>
-  <section class="intro sw-intro">
-    <span class="eyebrow">Swiss stage, {where}, from {from && year ? `${from}/${year}` : 'UNKNOWN'} NZDT</span>
-    <h1>Three wins in, three losses out</h1>
-    <p class="lede">{lede}</p>
-  </section>
-  <LiveNow phase="Swiss" />
+  {done ? (
+    <section class="sw-top">
+      <div class="intro">
+        <span class="eyebrow">Swiss stage, {span}</span>
+        <h1>Swiss done: {through.length} through</h1>
+        <p class="lede">{pickLine}</p>
+        <p class="muted">The bracket below has every game.</p>
+      </div>
+      <div class="panel sw-done">
+        {[['Through', through], ['Out', out]].map(([head, list]) => (
+          <div class:list={['dl', { out: head === 'Out' }]}>
+            <span class="eyebrow">{head}</span>
+            <ol>
+              {(list as typeof through).map((x) => <li><Logo code={x.team} size={24} /><span class="code">{x.team}</span><span class="num">{x.record}</span></li>)}
+            </ol>
+          </div>
+        ))}
+      </div>
+    </section>
+  ) : (
+    <>
+      <section class="intro sw-intro">
+        <span class="eyebrow">Swiss stage, {where}, from {from && year ? `${from}/${year}` : 'UNKNOWN'} NZDT</span>
+        <h1>Three wins in, three losses out</h1>
+        <p class="lede">{lede}</p>
+      </section>
+      <LiveNow phase="Swiss" />
+    </>
+  )}
   <SwissBracket><p class="caption">What if? <a class="gold" href={url('playground/')}>Play the rest out yourself in the Playground</a>.</p></SwissBracket>
   <PickemsPanel stage="swiss" full />
   <RecordTable rows={rows} records={swissRecords()} caption={caption} />
@@ -49,4 +83,16 @@ const footLeft = `${staged ? `Staged ${setLabel(v.swissSet)}` : 'Frozen baseline
 <style>
   /* the h1 needs more than the shared 70ch intro width to stay on one line at desktop widths; the lede keeps its own 60ch */
   .sw-intro { max-width: 1120px; }
+  /* after: the outcome leads, intro left, through and out lists right */
+  .sw-top { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-lg) var(--space-md); align-items: start; }
+  .sw-top .intro { display: flex; flex-direction: column; gap: var(--space-sm); }
+  .sw-done { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); }
+  .dl ol { list-style: none; margin: var(--space-2xs) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2xs); }
+  .dl li { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: var(--space-xs); }
+  .dl .code { font-size: var(--fs-lg); line-height: var(--lh-tight); }
+  .dl .num { color: var(--fg2); }
+  .dl.out li, .dl.out .num { color: var(--muted); }
+  .dl.out :global(img) { opacity: .6; }
+  @media (max-width: 1000px) { .sw-top { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 640px) { .sw-done { gap: var(--space-sm); padding: var(--space-sm) var(--space-md); } .dl .code { font-size: var(--fs-md); } }
 </style>
