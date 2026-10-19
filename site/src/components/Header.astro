@@ -23,7 +23,7 @@ const moreOn = MORE.includes(active);
       <details class="hmore">
         <summary class:list={{ on: moreOn }}>More<svg class="caret" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></summary>
         <div class="menu">
-          {more.map((n) => <a href={url(n.path)} aria-current={active === n.id ? 'page' : undefined}><span class="t">{n.label}</span><span class="s">{n.desc}</span></a>)}
+          {more.map((n) => <a href={url(n.path)} aria-current={active === n.id ? 'page' : undefined}><span class="t">{n.label}</span></a>)}
         </div>
       </details>
     </nav>
@@ -55,13 +55,12 @@ const moreOn = MORE.includes(active);
   .hmore .caret { transition: transform .15s; }
   .hmore[open] .caret { transform: rotate(180deg); }
   .hmore .menu {
-    position: absolute; right: 0; top: calc(100% + var(--space-2xs)); min-width: 280px; display: flex; flex-direction: column; padding: var(--space-2xs);
+    position: absolute; right: 0; top: calc(100% + var(--space-2xs)); min-width: 200px; display: flex; flex-direction: column; padding: var(--space-2xs);
     background: var(--surface); border: 1px solid var(--line-head); border-radius: var(--radius); box-shadow: 0 12px 32px var(--scrim);
     text-transform: none; letter-spacing: 0; font-family: var(--font-body); font-weight: 400;
   }
   .hmore .menu a { display: flex; flex-direction: column; gap: 2px; padding: var(--space-xs) var(--space-sm); white-space: normal; }
   .hmore .menu .t { font-family: var(--font-display); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: var(--fs-sm); color: var(--fg); }
-  .hmore .menu .s { font-size: var(--fs-sm); color: var(--muted); }
   .hmore .menu a:hover .t, .hmore .menu a[aria-current="page"] .t { color: var(--gold); }
   .hmore .menu a { border-radius: var(--radius-sm); }
   .hmore .menu a:hover { background: var(--hover); }
