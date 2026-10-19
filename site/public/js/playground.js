@@ -115,7 +115,9 @@
     const champ = $('#pg-champ');
     champ.hidden = !final;
     if (final) champ.innerHTML = `${logo(r.ms[0].w, 56)}<div><p class="caption">Your champion</p><p class="code">${esc(r.ms[0].w)}</p></div>`;
-    for (const b of root.querySelectorAll('[data-act="model"], [data-act="roll"]')) b.disabled = !open;
+    // Model picks and Roll work on open games and on games they filled before (not hand picks), so Roll can be pressed again
+    const redo = r.ms.some((m) => !m.real && (!m.w || m.auto));
+    for (const b of root.querySelectorAll('[data-act="model"], [data-act="roll"]')) b.disabled = !redo;
     root.querySelector('[data-act="lock"]').disabled = !!open || r.stage === 'F';
     root.querySelector('[data-act="undo"]').disabled = !st.hist.length;
   }
@@ -137,7 +139,7 @@
   const render = () => { renderRound(); renderStandings(); save(); if (runs) stale(); };
 
   // ---------- actions ----------
-  const fill = (how) => { for (const m of cur().ms) if (!m.w) m.w = how(m); render(); };
+  const fill = (how) => { for (const m of cur().ms) if (!m.real && (!m.w || m.auto)) { m.w = how(m); m.auto = true; } render(); };
   const ACT = {
     model: () => fill((m) => ((chance(m.a, m.b, m.bo) ?? 0.5) >= 0.5 ? m.a : m.b)),
     roll: () => fill((m) => sample(m, Math.random)),
@@ -157,6 +159,7 @@
     if (t && !t.disabled) {
       const m = cur().ms[Number(t.dataset.m)];
       m.w = m.w === t.dataset.team ? null : t.dataset.team;
+      m.auto = false; // a hand pick: Roll and Model picks leave it alone
       render();
       root.querySelector(`.pg-t[data-m="${t.dataset.m}"][data-team="${t.dataset.team}"]`)?.focus();
       return;
