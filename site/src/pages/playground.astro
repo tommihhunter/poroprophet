@@ -24,7 +24,7 @@ const teams = pools.flat();
 
 // Round 1 as drawn; before the draw, the first legal draw by the rule (pool 1 v pool 4, pool 2 v pool 3, no same region).
 let swissRows = rs.filter((r) => r.phase === 'Swiss' && r.kind === 'series' && r.team_a && r.team_b && r.round)
-  .map((r) => ({ round: Number(r.round), a: r.team_a!, b: r.team_b!, bo: Number(r.bo) || 1, w: r.winner ?? null }));
+  .map((r) => ({ round: Number(r.round), a: r.team_a!, b: r.team_b!, bo: Number(r.bo) || 1, w: r.winner ?? null, sa: r.score_a ?? null, sb: r.score_b ?? null }));
 const r1Drawn = swissRows.filter((r) => r.round === 1).length === 8;
 if (!r1Drawn) {
   const perms = (xs: string[]): string[][] => (xs.length <= 1 ? [xs] : xs.flatMap((x, i) => perms([...xs.slice(0, i), ...xs.slice(i + 1)]).map((p) => [x, ...p])));
@@ -33,7 +33,7 @@ if (!r1Drawn) {
 }
 // stage from the id: hand-made KO-QF1..4 / KO-SF1..2 (HANDOVER.md step 4) or bot KO-QF-<A>-<B>; id order = bracket order
 const ko = rs.filter((r) => r.phase === 'Knockouts' && r.team_a && r.team_b).sort((x, y) => x.id.localeCompare(y.id))
-  .map((r) => ({ stage: /^KO-(QF|SF|F)/.exec(r.id)?.[1] ?? '', a: r.team_a!, b: r.team_b!, w: r.winner ?? null }));
+  .map((r) => ({ stage: /^KO-(QF|SF|F)/.exec(r.id)?.[1] ?? '', a: r.team_a!, b: r.team_b!, w: r.winner ?? null, sa: r.score_a ?? null, sb: r.score_b ?? null }));
 
 const set = new Set(teams);
 const pairs = Object.fromEntries(matchups().filter((m) => set.has(m.a) && set.has(m.b)).map((m) => [`${m.a}|${m.b}`, [m.p_game, m.p_bo3, m.p_bo5]]));
@@ -59,7 +59,7 @@ const assumption = r1Drawn ? null
     <section class="section pg-road" aria-labelledby="pg-road-h">
       <div class="section-head">
         <h2 id="pg-road-h">Your bracket</h2>
-        <span>Earlier rounds change only via Undo.</span>
+        <span>Earlier rounds change only via Undo. Real results show the score.</span>
       </div>
       <div class="pg-bar">
         <p class="pg-now"><span id="pg-stage" class="code">Swiss round 1</span><span id="pg-progress" aria-live="polite"></span></p>
@@ -116,33 +116,42 @@ const assumption = r1Drawn ? null
   .pg-btn.pri:not(:disabled):hover { background: var(--gold); color: var(--bg); }
   .pg-btn:disabled { cursor: default; opacity: 0.4; }
 
-  /* the road: Swiss rounds, Through / Out, then the knockout bracket, side by side (scrolls inside .pg-sc) */
-  .pg-sc { position: relative; padding-bottom: var(--space-2xs); }
-  .pg-road-in { display: flex; align-items: flex-start; gap: var(--space-xs); width: max-content; }
-  .rd { display: flex; flex-direction: column; gap: var(--space-xs); width: 184px; flex: none; padding: var(--space-xs); border-radius: var(--radius); }
+  /* the road: eight fixed columns, R1 to R5, Through above Out, QF, then SF above Final above Champion. Every slot is
+     drawn from the start (blank cards the size of filled ones) and only fills in, so nothing moves as the bracket fills.
+     It fits the page from 1280px (8 x 148px plus gaps, drawn at 90%) and scrolls sideways inside .pg-sc below that. */
+  .pg-sc { --row: 30px; --card: calc(2 * var(--row) + 2 * var(--space-3xs) + 2px); --gap: var(--space-2xs); position: relative; padding-bottom: var(--space-2xs); }
+  .pg-road-in { display: grid; grid-template-columns: repeat(8, minmax(148px, 1fr)); gap: var(--gap); align-items: start; }
+  .rd { display: flex; flex-direction: column; gap: var(--space-xs); min-width: 0; padding: var(--space-2xs); border-radius: var(--radius); }
   .rd > summary { display: none; }
+  .stk { display: flex; flex-direction: column; gap: var(--space-xs); min-width: 0; }
   .rd.cur { background: color-mix(in srgb, var(--surface) 55%, var(--bg)); }
   .rd-head { display: flex; flex-direction: column; gap: 2px; padding-bottom: var(--space-2xs); border-bottom: 1px solid var(--line-strong); }
   .rd-head h3 { font-size: var(--fs-md); color: var(--muted2); white-space: nowrap; }
   .rd.cur .rd-head h3 { color: var(--fg); }
-  .rd-head p { font-size: var(--fs-xs); color: var(--muted); white-space: nowrap; }
+  .rd-head p { font-size: var(--fs-xs); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .rd.cur .rd-head p { color: var(--fg2); font-weight: 600; }
   .rd-head h3.teal { color: var(--teal); }
   .rd-head h3.risk { color: var(--risk); }
-  .pg-group { display: flex; flex-direction: column; gap: var(--space-2xs); }
-  .pg-gh { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--fs-sm); color: var(--muted); }
-  .pg-gh .code { color: var(--fg2); }
+  .pg-group { display: flex; flex-direction: column; gap: var(--space-3xs); }
+  .pg-gh { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--fs-xs); color: var(--muted); }
+  .pg-gh .code { color: var(--fg2); font-size: var(--fs-sm); }
   .pg-ms { display: flex; flex-direction: column; gap: var(--space-2xs); }
-  .pg-m { display: flex; flex-direction: column; padding: var(--space-3xs); background: var(--surface); border-radius: var(--radius-sm); box-shadow: var(--inset); }
-  /* a team row: a button in the current round, a plain row everywhere else */
+  .pg-list { display: flex; flex-direction: column; gap: var(--space-3xs); }
+  /* cards: one fixed size whether blank or filled; a match card is two team rows, a Through / Out slot one */
+  .pg-card { box-sizing: border-box; display: flex; flex-direction: column; height: var(--card); padding: var(--space-3xs); border: 1px solid transparent; border-radius: var(--radius-sm); }
+  .pg-m, .pg-slot { background: var(--surface); box-shadow: var(--inset); }
+  .pg-slot { height: calc(var(--row) + 2px); padding: 0 var(--space-3xs); }
+  .pg-blank { background: transparent; box-shadow: none; border: 1px dashed var(--line-head); }
+  .pg-blank .pg-t { font-size: var(--fs-xs); color: var(--muted); white-space: nowrap; overflow: hidden; }
+  /* a team row: a button in the current round, a plain row everywhere else, the same height either way */
   .pg-t {
-    appearance: none; display: flex; align-items: center; gap: var(--space-2xs); width: 100%; min-height: 32px; padding: var(--space-3xs) var(--space-2xs);
-    border: 0; border-radius: var(--radius-bar); background: transparent; color: var(--muted); text-align: left;
+    appearance: none; display: flex; align-items: center; gap: 6px; width: 100%; height: var(--row); flex: none; padding: 0 var(--space-3xs);
+    border: 0; border-radius: var(--radius-bar); background: transparent; color: var(--muted); text-align: left; font-size: var(--fs-sm);
   }
   .pg-t .code { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pg-t.win { color: var(--fg); }
   div.pg-t:not(.win) .logo, div.pg-t:not(.win) .disc { opacity: 0.6; }
-  button.pg-t { min-height: 40px; color: var(--fg); cursor: pointer; transition: color 120ms ease, background-color 120ms ease; }
+  button.pg-t { color: var(--fg); cursor: pointer; transition: color 120ms ease, background-color 120ms ease; }
   button.pg-t:hover { background: var(--hover); }
   button.pg-t:active { background: var(--line-strong); }
   button.pg-t:focus-visible { outline-offset: -2px; }
@@ -152,33 +161,23 @@ const assumption = r1Drawn ? null
   button.pg-t:disabled { cursor: default; }
   button.pg-t:disabled:hover { background: transparent; }
   button.pg-t[aria-pressed="true"]:disabled:hover { background: var(--line-head); }
-  .pg-t .v { font-weight: 600; font-size: var(--fs-sm); color: var(--muted); }
+  .pg-t .v { flex: none; font-weight: 600; font-size: var(--fs-xs); color: var(--muted); }
   .pg-t .v.fav { color: var(--fg); }
-  .pg-real { font-size: var(--fs-xs); color: var(--muted); padding: 0 var(--space-2xs); }
-  /* rounds not drawn yet */
-  .pg-pend { display: flex; flex-direction: column; gap: var(--space-2xs); padding: var(--space-xs); border-radius: var(--radius-sm); border: 1px dashed var(--line-head); }
-  .pg-chips { display: flex; flex-wrap: wrap; gap: var(--space-3xs) var(--space-xs); }
-  .pg-chip { display: inline-flex; align-items: center; gap: var(--space-3xs); font-size: var(--fs-sm); color: var(--fg2); }
-  .pg-chip .v { color: var(--muted); font-size: var(--fs-xs); }
-  /* Through / Out */
-  .rd.ends { width: 136px; }
-  .pg-list { display: flex; flex-direction: column; gap: var(--space-3xs); }
 
-  /* knockout bracket: every column splits the same height into equal slots, so each card sits level with the pair it
-     comes from; the lines run through the 24px column gap */
-  .ko { display: grid; grid-template-columns: repeat(3, 184px) 200px; gap: var(--space-md); align-items: stretch; }
-  .ko .rd { width: auto; }
-  .ko-slots { flex: 1 1 auto; display: flex; flex-direction: column; }
+  /* knockouts: the QF and SF columns split the same height into equal slots, so each semifinal sits level with the pair
+     it comes from; the lines run through the column gap and meet in its middle */
+  .ko-slots { display: flex; flex-direction: column; }
+  .ko-l .ko-slots, .ko-r .ko-slots { height: calc(4 * (var(--card) + 2 * var(--space-3xs))); }
   .ko-slot { position: relative; flex: 1 1 0; display: flex; flex-direction: column; justify-content: center; padding: var(--space-3xs) 0; }
-  .ko-l .ko-slot::after { content: ''; position: absolute; left: 100%; width: var(--space-md); border: 0 solid var(--line-head); }
+  .ko-l .ko-slot::after { content: ''; position: absolute; left: 100%; width: calc(var(--space-2xs) + var(--gap) / 2); border: 0 solid var(--line-head); }
   .ko-l .ko-slot:nth-child(odd)::after { top: 50%; bottom: 0; border-top-width: 1px; border-right-width: 1px; }
   .ko-l .ko-slot:nth-child(even)::after { top: 0; bottom: 50%; border-bottom-width: 1px; border-right-width: 1px; }
-  .ko-r .ko-slot::before { content: ''; position: absolute; right: 100%; top: 50%; width: var(--space-md); border-top: 1px solid var(--line-head); }
-  .ko-fin .ko-slot::after { content: ''; position: absolute; left: 100%; top: 50%; width: calc(2 * var(--space-md)); border-top: 1px solid var(--line-head); }
-  .pg-champ { display: flex; flex-direction: column; gap: var(--space-2xs); padding: var(--space-sm); background: var(--surface); border-radius: var(--radius-sm); box-shadow: var(--inset); }
-  .pg-champ .who { display: flex; align-items: center; gap: var(--space-xs); }
-  .pg-champ .code { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-2xl); color: var(--fg); }
-  .pg-champ .path { font-size: var(--fs-sm); color: var(--fg2); }
+  .ko-r .ko-slot::before { content: ''; position: absolute; right: 100%; top: 50%; width: calc(var(--space-2xs) + var(--gap) / 2); border-top: 1px solid var(--line-head); }
+  .pg-champ { height: 152px; gap: var(--space-2xs); padding: var(--space-xs); background: var(--surface); box-shadow: var(--inset); }
+  .pg-champ.pg-blank { justify-content: center; align-items: center; background: transparent; box-shadow: none; }
+  .pg-champ .who { display: flex; align-items: center; gap: var(--space-2xs); }
+  .pg-champ .code { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-xl); color: var(--fg); }
+  .pg-champ .path { font-size: var(--fs-xs); color: var(--fg2); }
 
   /* nested bars, the TitleRace look (components/TitleRace.astro) */
   .pg-odds { --s0: color-mix(in srgb, var(--bar-alt) 42%, var(--track)); --s1: color-mix(in srgb, var(--bar-alt) 68%, var(--track)); --s2: var(--bar-alt); --s3: color-mix(in srgb, var(--bar-alt) 55%, var(--fg)); }
@@ -205,10 +204,10 @@ const assumption = r1Drawn ? null
     .pg-bar { order: 9; top: auto; bottom: calc(78px + env(safe-area-inset-bottom)); border-bottom: 0; border-top: 1px solid var(--line-strong); }
     .pg-bar .pg-acts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: var(--space-3xs); }
     .pg-bar .pg-btn { padding: var(--space-3xs) var(--space-2xs); min-height: 40px; }
-    /* rounds stacked, played rounds folded to one line */
-    .pg-sc { overflow: visible; padding-bottom: 0; }
-    .pg-road-in, .ko { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-xs); width: auto; }
-    .rd, .rd.ends { width: auto; scroll-margin-top: 88px; }
+    /* rounds stacked; every round but the current one folds to one line */
+    .pg-sc { --row: 40px; overflow: visible; padding-bottom: 0; }
+    .pg-road-in { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-xs); }
+    .rd { scroll-margin-top: 88px; }
     .rd > summary {
       display: flex; align-items: center; gap: var(--space-2xs); min-height: 44px; cursor: pointer; list-style: none;
       font-size: var(--fs-sm); color: var(--fg2);
@@ -220,12 +219,11 @@ const assumption = r1Drawn ? null
     details.rd { padding: 0 var(--space-xs); border: 1px solid var(--line); }
     details.rd[open] { padding-bottom: var(--space-xs); }
     details.rd > .rd-head { display: none; }
-    .rd .pg-ms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .rd .pg-t { padding: var(--space-3xs); gap: var(--space-3xs); }
-    .ko-slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: var(--space-2xs); }
+    .rd .pg-ms, .rd .pg-list, .ko-slots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2xs); }
+    .ko-l .ko-slots, .ko-r .ko-slots { height: auto; }
     .ko-slot { padding: 0; }
     .ko-slot::before, .ko-slot::after { display: none; }
-    .rd.ends .pg-list { flex-direction: row; flex-wrap: wrap; gap: var(--space-3xs) var(--space-xs); }
+    .pg-champ { height: 128px; }
     .pg-leg .pg-leg-d { margin-left: 0; flex-basis: 100%; }
     .pg-row { grid-template-columns: 84px minmax(0, 1fr) 56px 44px; gap: var(--space-xs); }
     .pg-row .rk { display: none; }

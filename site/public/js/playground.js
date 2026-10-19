@@ -2,7 +2,7 @@
 // Format as in model/simulate.py: pair by record, no rematches, Bo3 when either team is on 2 wins or 2 losses, else
 // Bo1; 3 wins advance, 3 losses out. QF A = a 3-0 v a 3-2, QF C = the other 3-0 v another 3-2, QF B and D from the
 // 3-1s and the last 3-2s at random; SF1 = W(A) v W(B), SF2 = W(C) v W(D), then the final; all Bo5.
-// A round: { stage: 'Swiss' | 'QF' | 'SF' | 'F', n (Swiss round), ms: [{ a, b, bo, w, real, rec }] }.
+// A round: { stage: 'Swiss' | 'QF' | 'SF' | 'F', n (Swiss round), ms: [{ a, b, bo, w, real, rec, sa, sb }] } (sa, sb: real score).
 (() => {
   const root = document.getElementById('pg');
   if (!root) return;
@@ -21,8 +21,11 @@
     for (const rd of rounds) if (rd.stage === 'Swiss') for (const m of rd.ms) if (m.w) { r[m.w][0]++; r[m.w === m.a ? m.b : m.a][1]++; }
     return r;
   };
-  const realW = (stage, a, b) => (D.ko.find((k) => k.stage === stage && ((k.a === a && k.b === b) || (k.a === b && k.b === a))) || {}).w || null;
-  const mk = (a, b, bo, w, rec) => ({ a, b, bo, w: w || null, real: !!w, rec });
+  const mk = (a, b, bo, w, rec, sa, sb) => ({ a, b, bo, w: w || null, real: !!w, rec, sa: sa ?? null, sb: sb ?? null });
+  const mkKo = (stage, a, b) => {
+    const k = D.ko.find((x) => x.stage === stage && ((x.a === a && x.b === b) || (x.a === b && x.b === a))) || {};
+    return mk(a, b, 5, k.w, undefined, k.a === a ? k.sa : k.sb, k.a === a ? k.sb : k.sa);
+  };
 
   // the round after the last one in `rounds`, or null after the final
   function nextRound(rounds, rnd) {
@@ -33,7 +36,7 @@
       if (alive.length) {
         const n = last.n + 1, bo = (t) => (rec[t].includes(2) ? 3 : 1);
         const played = new Set(rounds.flatMap((rd) => rd.ms.map((m) => [m.a, m.b].sort().join('|'))));
-        const ms = D.swiss.filter((r) => r.round === n).map((r) => mk(r.a, r.b, r.bo, r.w, key(r.a)));
+        const ms = D.swiss.filter((r) => r.round === n).map((r) => mk(r.a, r.b, r.bo, r.w, key(r.a), r.sa, r.sb));
         const used = new Set(ms.flatMap((m) => [m.a, m.b]));
         const pools = {};
         for (const t of alive) if (!used.has(t)) (pools[key(t)] = pools[key(t)] || []).push(t);
@@ -56,20 +59,20 @@
         const r30 = of('3-0'), r32 = of('3-2'), rest = shuffle([...of('3-1'), ...r32.slice(2)], rnd);
         qf = [[r30[0], r32[0]], [rest[0], rest[1]], [r30[1], r32[1]], [rest[2], rest[3]]];
       }
-      return { stage: 'QF', ms: qf.map(([a, b]) => mk(a, b, 5, realW('QF', a, b))) };
+      return { stage: 'QF', ms: qf.map(([a, b]) => mkKo('QF', a, b)) };
     }
     if (last.stage === 'F') return null;
     const w = last.ms.map((m) => m.w), stage = last.stage === 'QF' ? 'SF' : 'F';
     const real = D.ko.filter((k) => k.stage === stage), n = stage === 'SF' ? 2 : 1; // the real draw once it is all in
     const ps = real.length === n ? real.map((k) => [k.a, k.b]) : stage === 'SF' ? [[w[0], w[1]], [w[2], w[3]]] : [[w[0], w[1]]];
-    return { stage, ms: ps.map(([a, b]) => mk(a, b, 5, realW(stage, a, b))) };
+    return { stage, ms: ps.map(([a, b]) => mkKo(stage, a, b)) };
   }
   const sample = (m, rnd) => (rnd() < (chance(m.a, m.b, m.bo) ?? 0.5) ? m.a : m.b);
   const clone = (rounds) => rounds.map((r) => ({ ...r, ms: r.ms.map((m) => ({ ...m })) }));
 
   // the real results: round 1 as drawn, then every later round that has a real result in it
   function initial() {
-    const rs = [{ stage: 'Swiss', n: 1, ms: D.swiss.filter((r) => r.round === 1).map((r) => mk(r.a, r.b, r.bo, r.w, '0-0')) }];
+    const rs = [{ stage: 'Swiss', n: 1, ms: D.swiss.filter((r) => r.round === 1).map((r) => mk(r.a, r.b, r.bo, r.w, '0-0', r.sa, r.sb)) }];
     for (let nx; rs.at(-1).ms.every((m) => m.w) && (nx = nextRound(rs, Math.random)) && nx.ms.some((m) => m.real);) rs.push(nx);
     return rs;
   }
@@ -89,97 +92,98 @@
   const pct1 = (p) => (p > 0 && p < 0.0005 ? '<0.1%' : `${(p * 100).toFixed(1)}%`);
   const cur = () => st.rounds.at(-1);
   const title = (r) => (r.stage === 'Swiss' ? `Swiss round ${r.n}` : STAGE[r.stage]);
-  // record groups per Swiss round in display order (lib/swiss.ts SHAPE)
+  // The road's shape never changes: every slot of every round is drawn from the start as a blank card the same size as
+  // a filled one, and picks and lock-ins fill the blanks in place. Record groups per Swiss round in display order
+  // (lib/swiss.ts SHAPE); knockout blanks name their slot only.
   const SHAPE = [[['0-0', 8]], [['1-0', 4], ['0-1', 4]], [['2-0', 2], ['1-1', 4], ['0-2', 2]], [['2-1', 3], ['1-2', 3]], [['2-2', 3]]];
-  const KO_PEND = { QF: ['3-0 v 3-2', '3-1 or 3-2 pair', '3-0 v 3-2', '3-1 or 3-2 pair'], SF: ['QF 1 and 2 winners', 'QF 3 and 4 winners'], F: ['Semifinal winners'] };
-  const KO_AFTER = { QF: 'Drawn after round 5', SF: 'After the quarterfinals', F: 'After the semifinals' };
+  const KO_SLOT = {
+    QF: [['3-0', '3-2'], ['3-1 or 3-2', '3-1 or 3-2'], ['3-0', '3-2'], ['3-1 or 3-2', '3-1 or 3-2']],
+    SF: [['Winner QF 1', 'Winner QF 2'], ['Winner QF 3', 'Winner QF 4']], F: [['Winner SF 1', 'Winner SF 2']],
+  };
+  const KO_AFTER = { QF: 'After round 5', SF: 'After the quarters', F: 'After the semis' };
   const phone = matchMedia('(max-width: 640px)');
-  const unfolded = new Set(); // played rounds opened on the phone
+  const unfolded = new Set(); // rounds opened on the phone
 
-  function teamBtn(m, i, t, p) {
-    const fav = p != null && p >= 0.5;
+  const other = (m, t) => (t === m.a ? m.b : m.a);
+  // a real result shows its score, a pick the team's chance in that series
+  const val = (m, t) => (m.real && m.sa != null ? String(t === m.a ? m.sa : m.sb) : pct(chance(t, other(m, t), m.bo)));
+  const row = (m, t, fav) => `${logo(t, 20)}<span class="code">${esc(t)}</span><span class="v${fav ? ' fav' : ''}">${val(m, t)}</span>`;
+  function teamBtn(m, i, t) {
+    const p = chance(t, other(m, t), m.bo);
     return `<button type="button" class="pg-t${m.w === t ? ' win' : ''}" data-m="${i}" data-team="${esc(t)}" aria-pressed="${m.w === t}"${m.real ? ' disabled' : ''}>`
-      + `${logo(t, 22)}<span class="code">${esc(t)}</span><span class="v${fav ? ' fav' : ''}">${pct(p)}</span></button>`;
+      + `${row(m, t, !m.real && p != null && p >= 0.5)}</button>`;
   }
-  // the current round: both teams as buttons in drawn order with their chances; played: winner first, plain rows
+  // the current round: both teams as buttons in drawn order; played: winner first, plain rows
   function card(m, i, live) {
-    const tag = m.real ? '<span class="pg-real">Result</span>' : '';
+    const tag = m.real ? ', result' : '';
     if (live) {
-      const p = chance(m.a, m.b, m.bo);
-      return `<div class="pg-m${m.w ? ' picked' : ''}" role="group" aria-label="${esc(`${m.a} v ${m.b}, Bo${m.bo}`)}">`
-        + teamBtn(m, i, m.a, p) + teamBtn(m, i, m.b, p == null ? null : 1 - p) + tag + '</div>';
+      return `<div class="pg-card pg-m${m.w ? ' picked' : ''}" role="group" aria-label="${esc(`${m.a} v ${m.b}, Bo${m.bo}${tag}`)}">`
+        + teamBtn(m, i, m.a) + teamBtn(m, i, m.b) + '</div>';
     }
-    const l = m.w === m.a ? m.b : m.a;
-    return `<div class="pg-m" aria-label="${esc(`${m.w} beat ${l}`)}"><div class="pg-t win">${logo(m.w, 22)}<span class="code">${esc(m.w)}</span></div>`
-      + `<div class="pg-t">${logo(l, 22)}<span class="code">${esc(l)}</span></div>${tag}</div>`;
+    const l = other(m, m.w);
+    return `<div class="pg-card pg-m" aria-label="${esc(`${m.w} beat ${l}${tag}`)}"><div class="pg-t win">${row(m, m.w)}</div><div class="pg-t">${row(m, l)}</div></div>`;
   }
-  const chip = (t, v) => `<span class="pg-chip">${logo(t, 18)}<span class="code">${esc(t)}</span>${v ? `<span class="v">${esc(v)}</span>` : ''}</span>`;
-  // one column; a played round is a <details>, open on desktop, folded to its summary line on the phone
+  const blank = (ls = ['', '']) => `<div class="pg-card pg-blank" aria-hidden="true">${ls.map((t) => `<div class="pg-t">${esc(t)}</div>`).join('')}</div>`;
+  const slot = (t, v) => (t ? `<div class="pg-card pg-slot"><div class="pg-t win">${logo(t, 20)}<span class="code">${esc(t)}</span><span class="v">${esc(v)}</span></div></div>`
+    : '<div class="pg-card pg-slot pg-blank" aria-hidden="true"><div class="pg-t"></div></div>');
+  const pad = (xs, n, b) => xs.concat(Array(Math.max(0, n - xs.length)).fill(b));
+  // one column; a round that is not the current one is a <details>, open on desktop, folded to its summary on the phone
   function col(k, h, sub, body, state, sum, cls = '') {
     const head = `<div class="rd-head"><h3>${esc(h)}</h3><p>${esc(sub)}</p></div>`;
-    if (state === 'played') {
+    if (state !== 'cur') {
       const open = !phone.matches || unfolded.has(k);
-      return `<details class="rd played ${cls}" data-k="${k}"${open ? ' open' : ''}><summary>${sum}</summary>${head}${body}</details>`;
+      return `<details class="rd ${state} ${cls}" data-k="${k}"${open ? ' open' : ''}><summary>${sum}</summary>${head}${body}</details>`;
     }
-    return `<section class="rd ${state} ${cls}" data-k="${k}" aria-label="${esc(h)}">${head}${body}</section>`;
+    return `<section class="rd cur ${cls}" data-k="${k}" aria-label="${esc(h)}">${head}${body}</section>`;
   }
   // Swiss: records going into each round, the 3-win and 3-loss teams in the order they got there
   function swissRun() {
-    const rec = Object.fromEntries(D.teams.map((t) => [t, [0, 0]])), into = [], through = [], out = [];
+    const rec = Object.fromEntries(D.teams.map((t) => [t, [0, 0]])), through = [], out = [];
     for (const rd of st.rounds.filter((r) => r.stage === 'Swiss')) {
-      into[rd.n] = Object.fromEntries(D.teams.map((t) => [t, rec[t].join('-')]));
       for (const m of rd.ms) if (m.w) for (const t of [m.a, m.b]) {
         rec[t][t === m.w ? 0 : 1]++;
         if (rec[t][0] === 3 && t === m.w) through.push([t, rec[t].join('-')]);
         if (rec[t][1] === 3 && t !== m.w) out.push([t, rec[t].join('-')]);
       }
     }
-    return { rec, into, through, out };
+    return { rec, through, out };
   }
   function renderRoad() {
     const r = cur(), ci = st.rounds.length - 1, sw = swissRun(), won = (rd) => rd.ms.map((m) => m.w).join(', ');
-    const state = (j) => (j < ci ? 'played' : j === ci ? 'cur' : 'next');
+    const state = (j) => (j < 0 ? 'next' : j < ci ? 'played' : 'cur');
+    const sum = (h, rd, sub) => `<b>${esc(h)}</b> ${esc(rd && rd !== r ? `${won(rd)} won` : sub.toLowerCase())}`;
     let html = '';
     for (let n = 1; n <= 5; n++) {
-      const j = st.rounds.findIndex((x) => x.stage === 'Swiss' && x.n === n), rd = st.rounds[j], s = j < 0 ? 'next' : state(j);
-      // a later round lists the teams on each record once the round before it is fully picked
-      const known = s === 'next' && r.stage === 'Swiss' && n === r.n + 1 && r.ms.every((m) => m.w);
+      const j = st.rounds.findIndex((x) => x.stage === 'Swiss' && x.n === n), rd = st.rounds[j], s = state(j);
       const body = SHAPE[n - 1].map(([rec, games]) => {
-        const head = `<p class="pg-gh"><span class="code">${rec}</span><span>Bo${rec.includes('2') ? 3 : 1}</span></p>`;
-        if (rd) {
-          const ms = rd.ms.map((m, i) => [m, i]).filter(([m]) => m.rec === rec);
-          return `<div class="pg-group">${head}<div class="pg-ms">${ms.map(([m, i]) => card(m, i, s === 'cur')).join('')}</div></div>`;
-        }
-        const ts = known ? D.teams.filter((t) => sw.rec[t].join('-') === rec) : [];
-        return `<div class="pg-group">${head}<div class="pg-pend"><span class="caption">${games} ${games === 1 ? 'game' : 'games'}</span>`
-          + (ts.length ? `<span class="pg-chips">${ts.map((t) => chip(t)).join('')}</span>` : '') + '</div></div>';
+        const ms = rd ? rd.ms.map((m, i) => [m, i]).filter(([m]) => m.rec === rec).map(([m, i]) => card(m, i, s === 'cur')) : [];
+        return `<div class="pg-group"><p class="pg-gh"><span class="code">${rec}</span><span>Bo${rec.includes('2') ? 3 : 1}</span></p>`
+          + `<div class="pg-ms">${pad(ms, games, blank()).join('')}</div></div>`;
       }).join('');
       const sub = s === 'cur' ? 'Your pick' : s === 'played' ? 'Locked in' : `Drawn after round ${n - 1}`;
-      html += col(`S${n}`, `Round ${n}`, sub, body, s, rd ? `<b>Round ${n}</b> ${esc(won(rd))} won` : '');
+      html += col(`S${n}`, `Round ${n}`, sub, body, s, sum(`Round ${n}`, rd, sub));
     }
-    const list = (xs) => (xs.length ? `<div class="pg-list">${xs.map(([t, v]) => chip(t, v)).join('')}</div>` : '<p class="caption">None yet</p>');
+    const list = (xs) => `<div class="pg-list">${pad(xs.map(([t, v]) => slot(t, v)), 8, slot()).join('')}</div>`;
     html += `<section class="rd ends" aria-label="Through and out">`
       + `<div class="rd-head"><h3 class="teal">Through</h3><p>${sw.through.length} of 8</p></div>${list(sw.through)}`
       + `<div class="rd-head"><h3 class="risk">Out</h3><p>${sw.out.length} of 8</p></div>${list(sw.out)}</section>`;
 
-    let ko = '';
-    ['QF', 'SF', 'F'].forEach((stage, x) => {
-      const j = st.rounds.findIndex((y) => y.stage === stage), rd = st.rounds[j], s = j < 0 ? 'next' : state(j);
-      const slots = rd ? rd.ms.map((m, i) => card(m, i, s === 'cur')) : KO_PEND[stage].map((t) => `<div class="pg-pend"><span class="caption">${t}</span></div>`);
+    const koCol = (stage, cls) => {
+      const j = st.rounds.findIndex((y) => y.stage === stage), rd = st.rounds[j], s = state(j);
+      const cards = rd ? rd.ms.map((m, i) => card(m, i, s === 'cur')) : KO_SLOT[stage].map((ls) => blank(ls));
       const sub = s === 'cur' ? 'Your pick, Bo5' : s === 'played' ? 'Bo5, locked in' : KO_AFTER[stage];
-      ko += col(stage, STAGE[stage], sub, `<div class="ko-slots">${slots.map((h) => `<div class="ko-slot">${h}</div>`).join('')}</div>`, s,
-        rd ? `<b>${STAGE[stage]}</b> ${esc(won(rd))} won` : '', ['ko-l', 'ko-l ko-r', 'ko-r ko-fin'][x]);
-    });
+      return col(stage, STAGE[stage], sub, `<div class="ko-slots">${cards.map((h) => `<div class="ko-slot">${h}</div>`).join('')}</div>`, s, sum(STAGE[stage], rd, sub), cls);
+    };
     // the champion and the road there, e.g. "GEN: 3-0 in Swiss, beat G2, T1, HLE"
     const f = r.stage === 'F' && r.ms[0].w ? r.ms[0].w : null;
-    const beat = f ? st.rounds.filter((y) => y.stage !== 'Swiss').map((y) => y.ms.find((m) => m.a === f || m.b === f)).map((m) => (m.a === f ? m.b : m.a)) : [];
+    const beat = f ? st.rounds.filter((y) => y.stage !== 'Swiss').map((y) => y.ms.find((m) => m.a === f || m.b === f)).map((m) => other(m, f)) : [];
     const champ = f
-      ? `<div id="pg-champ" class="pg-champ"><p class="caption">Your champion</p><p class="who">${logo(f, 48)}<span class="code">${esc(f)}</span></p>`
+      ? `<div id="pg-champ" class="pg-card pg-champ"><p class="caption">Your champion</p><p class="who">${logo(f, 32)}<span class="code">${esc(f)}</span></p>`
         + `<p class="path">${esc(`${f}: ${sw.rec[f].join('-')} in Swiss, beat ${beat.join(', ')}`)}</p></div>`
-      : '<div class="pg-pend"><span class="caption">Pick the final</span></div>';
-    ko += `<section class="rd" aria-label="Champion"><div class="rd-head"><h3>Champion</h3><p>${f ? 'Your pick' : 'After the final'}</p></div>`
-      + `<div class="ko-slots"><div class="ko-slot">${champ}</div></div></section>`;
-    $('#pg-road').innerHTML = html + `<div class="ko">${ko}</div>`;
+      : '<div class="pg-card pg-champ pg-blank"><span class="caption">Pick the final</span></div>';
+    html += koCol('QF', 'ko-l') + `<div class="stk">${koCol('SF', 'ko-r')}${koCol('F')}`
+      + `<section class="rd champ" aria-label="Champion"><div class="rd-head"><h3>Champion</h3><p>${f ? 'Your pick' : 'After the final'}</p></div>${champ}</section></div>`;
+    $('#pg-road').innerHTML = html;
 
     const open = r.ms.filter((m) => !m.w).length, done = r.ms.length - open, final = r.stage === 'F' && !open;
     $('#pg-stage').textContent = title(r);
@@ -197,7 +201,7 @@
     if (!c) return;
     const behavior = smooth ? 'smooth' : 'auto';
     if (phone.matches) { if (smooth) c.scrollIntoView({ block: 'start', behavior }); return; }
-    const box = c.closest('.ko') || c, left = box.offsetLeft - Math.max(0, (sc.clientWidth - box.offsetWidth) / 2);
+    const box = c.closest('.stk') || c, left = box.offsetLeft - Math.max(0, (sc.clientWidth - box.offsetWidth) / 2);
     sc.scrollTo({ left, behavior });
   }
   let runs = 0;

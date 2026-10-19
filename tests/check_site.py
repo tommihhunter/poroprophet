@@ -183,10 +183,19 @@ def check_playground(browser, target, problems):
     round, lock in, and the next round has the Swiss (or knockout) shape in PG_NEXT while the round just locked stays on
     the road with all its winners; "Run 1,000" then renders one odds row per Swiss team (16); "Roll to the end" reaches
     the champion card with the quarterfinal, semifinal and final picks on the road. At 390 the road after Roll to the end
-    adds no horizontal page scroll. At the final there is nothing to lock in, so only the odds and the end are checked."""
+    adds no horizontal page scroll. The road's shape is fixed: at 1280 and 1440 it never scrolls sideways, and it holds the
+    same number of cards (blank plus filled) at the start, after one Lock in and after Roll to the end. At the final there
+    is nothing to lock in, so only the odds and the end are checked."""
+    cards = []
+    def road(tag):  # the road's card count, and no sideways scroll inside it
+        n, sw, cw = page.evaluate("[document.querySelectorAll('#pg-road .pg-card').length, ...['scrollWidth', 'clientWidth'].map(k => document.querySelector('.pg-sc')[k])]")
+        cards.append(n)
+        if sw > cw:
+            problems.append(f"{tag}: the road scrolls sideways ({sw} > {cw})")
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     page.on("pageerror", lambda e: problems.append(f"playground: page error: {e}"))
     page.goto(target, wait_until="networkidle")
+    road("playground @1440 start")
     start = page.text_content("#pg-stage")
     if start in PG_NEXT:
         done = page.get_attribute(".rd.cur", "data-k")
@@ -200,6 +209,7 @@ def check_playground(browser, target, problems):
           return gs.length ? gs.map(g => g.querySelector('.pg-gh .code').textContent + ' ' + g.querySelectorAll('.pg-m').length)
             : ['KO ' + c.querySelectorAll('.pg-m').length]; })()""")
         kept = page.locator(f".rd[data-k='{done}'] .pg-t.win").count()
+        road("playground @1440 after Lock in")
         print(f"playground @1440: from {start}, lock in shows {stage}: {groups}; {done} still shows {kept} of {n} winners")
         if (stage, groups) != PG_NEXT[start]:
             problems.append(f"playground @1440: from {start}, lock in shows {stage} {groups}, expected {PG_NEXT[start]}")
@@ -214,7 +224,17 @@ def check_playground(browser, target, problems):
     if rows != 16:
         problems.append(f"playground @1440: odds from here shows {rows} rows, expected 16")
     roll_to_end(page, "playground @1440", problems)
+    road("playground @1440 after Roll to the end")
     page.close()
+    page = browser.new_page(viewport={"width": 1280, "height": 900})
+    page.goto(target, wait_until="networkidle")
+    road("playground @1280 start")
+    roll_to_end(page, "playground @1280", problems)
+    road("playground @1280 after Roll to the end")
+    page.close()
+    print(f"playground: road cards {cards}")
+    if len(set(cards)) != 1:
+        problems.append(f"playground: the road's card count changes as it fills: {cards}")
     page = browser.new_page(viewport={"width": 390, "height": 844})
     page.goto(target, wait_until="networkidle")
     roll_to_end(page, "playground @390", problems)
