@@ -16,6 +16,10 @@ const playInWinner = (): string => {
   return rs.filter((r) => r.phase === 'Swiss' && r.kind === 'series' && Number((r as { round?: number }).round) === 1)
     .flatMap((r) => [r.team_a, r.team_b]).find((t) => t && pi.has(t)) ?? 'Play-In winner';
 };
+/** NZDT match days of each Swiss round, from Riot's lolesports schedule (accessed 19/10/2026): the 33 Swiss slots in order are
+ *  8 Bo1 (R1), 8 Bo1 (R2), 4 Bo1 + 4 Bo3 over two days (R3), 6 Bo3 over three days (R4), 3 Bo3 (R5). */
+export const SWISS_ROUND_DAYS: Record<number, string> = { 1: '24/10', 2: '25/10', 3: '26 and 27/10', 4: '29 to 31/10', 5: '01/11' };
+
 export const SWISS_POOLS = (): string[][] => [
   ['GEN', 'AL', 'TLAW', 'G2'],
   ['HLE', 'BLG', 'TSW', 'LOS'],

@@ -15,12 +15,16 @@ const v = view(st, 'latest');
 const byId = new Map(v.rows.map((s) => [s.id, s]));
 const VENUE: Record<string, string> = { Quarterfinals: 'Quarterfinals, Allen', Semifinals: 'Semifinals, Allen', Final: 'Final, Brooklyn' };
 const cols = (st.brackets ?? []).map(([name, ids]) => ({ name, head: VENUE[name] ?? name, items: ids.map((id) => byId.get(id)).filter((s): s is Series => !!s) }));
+// column dates from the slots' NZDT starts: "04 to 07/11", "08 and 09/11", "15/11"
+const colDays = (items: Series[]) => {
+  const d = [...new Set(items.map((s) => startNz(s).slice(0, 5)).filter(Boolean))];
+  return !d.length ? '' : d.length === 1 ? d[0] : `${d[0].slice(0, 2)} ${d.length === 2 ? 'and' : 'to'} ${d.at(-1)}`;
+};
 const all = cols.flatMap((c) => c.items);
 const day = (s?: Series) => (s?.time_nz || '').slice(0, 10);
 const ord = (d: string) => d.split('/').reverse().join('');
 const dates = all.map(day).filter(Boolean).sort((a, b) => ord(a).localeCompare(ord(b)));
 const span = dates.length ? `${dates[0].slice(0, 5)} to ${dates.at(-1)}` : 'UNKNOWN';
-const finalDay = day(cols.at(-1)?.items[0]).slice(0, 5);
 // The real draw is known once knockout results or a knockouts staged run exist.
 const real = results().some((r) => r.phase === 'Knockouts' && r.team_a && r.team_b) || series().some((s) => s.set === 'knockouts');
 
@@ -67,7 +71,7 @@ const slot = (s: Series) => {
       <div class="bracket">
         {cols.map((c, i) => (
           <div class="col">
-            <span class:list={['colhead', { gold: i === cols.length - 1 }]}>{c.head}{i === cols.length - 1 && finalDay ? <span class="ph">, {finalDay}</span> : ''}</span>
+            <span class:list={['colhead', { gold: i === cols.length - 1 }]}>{c.head}{colDays(c.items) && <span class="cdate">, {colDays(c.items)}</span>}</span>
             <div class="stack">
               {c.items.map((s) => real ? <SeriesCard s={s} large final={i === cols.length - 1} /> : (
                 <div class:list={['card', 'tbd', { 'is-final': i === cols.length - 1 }]}>
@@ -114,6 +118,7 @@ const slot = (s: Series) => {
   .col { display: flex; flex-direction: column; gap: var(--space-xs); min-width: 0; }
   .colhead { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: var(--track-caps); color: var(--muted2); }
   .colhead.gold { color: var(--gold); }
+  .colhead .cdate { color: var(--muted); font-family: var(--font-body); font-weight: 600; text-transform: none; letter-spacing: 0; }
   .colhead .ph, .ph-lede { display: none; }
   .stack { display: flex; flex-direction: column; justify-content: space-around; gap: var(--space-sm); min-height: 760px; flex: 1; }
   .path { min-width: 900px; display: flex; flex-direction: column; }

@@ -3,7 +3,7 @@
    Eliminated. A match card shows both teams' chances before it is played and the score after (winner first).
    Groups not drawn yet list the teams known to be on that record. Every team mark links to its team page. Desktop: columns side by side (scrolls inside .scroll if narrow); phone: rounds stacked. */
 import Logo from './Logo.astro';
-import { swissState } from '../lib/swiss';
+import { SWISS_ROUND_DAYS, swissState } from '../lib/swiss';
 import { pct } from '../lib/format';
 import { teamSlug } from '../lib/data';
 import { url } from '../lib/url';
@@ -21,7 +21,7 @@ const pending = (round: number, games: number) => `${games} ${games === 1 ? 'gam
     <div class="sb-grid">
       {rounds.map((r) => (
         <section class="sb-col" aria-label={`Round ${r.round}`}>
-          <h3 class="sb-head">Round {r.round}</h3>
+          <h3 class="sb-head">Round {r.round}{SWISS_ROUND_DAYS[r.round] && <span class="sb-date">{SWISS_ROUND_DAYS[r.round]}</span>}</h3>
           {r.groups.map((g) => (
             <div class="sb-group">
               <p class="sb-gh"><span class="code">{g.record}</span><span>Bo{g.bo}</span></p>
@@ -74,6 +74,8 @@ const pending = (round: number, games: number) => `${games} ${games === 1 ? 'gam
   .sb-grid { display: grid; grid-template-columns: repeat(5, minmax(176px, 1fr)) repeat(2, minmax(112px, 0.7fr)); gap: var(--space-sm); align-items: start; }
   .sb-col { display: flex; flex-direction: column; gap: var(--space-sm); min-width: 0; }
   .sb-head { font-size: var(--fs-md); color: var(--muted2); padding-bottom: var(--space-2xs); border-bottom: 1px solid var(--line-strong); }
+  .sb-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-2xs); }
+  .sb-date { font-family: var(--font-body); font-size: var(--fs-sm); font-weight: 600; color: var(--muted); text-transform: none; letter-spacing: 0; }
   .sb-head.teal { color: var(--teal); }
   .sb-head.risk { color: var(--risk); }
   .sb-group { display: flex; flex-direction: column; gap: var(--space-2xs); }
