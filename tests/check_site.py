@@ -52,6 +52,20 @@ def check_play_in(page, tag, problems):
     print(f"{tag}: clicked {want}, shown {shown}, pressed {pressed}")
     if shown != [want] or pressed != [want]:
         problems.append(f"{tag}: Play-In click on {want} shows {shown}, pressed {pressed}")
+    # the double-elimination tree holds all six series; the top leads with the outcome only once the final has a result
+    dash = os.environ.get("W26_DASH") or os.path.join(ROOT, "data", "dash")
+    with open(os.path.join(dash, "results.json"), encoding="utf-8") as fh:
+        final = any(r.get("id") == "PI-GF" and r.get("winner") for r in json.load(fh))
+    n = page.locator(".tree [data-show]").count()
+    h1 = page.locator("h1").inner_text()
+    rows = page.locator(".stand li").count()
+    print(f"{tag}: tree {n} cards, h1 {h1!r}, standings rows {rows}, final result {final}")
+    if n != 6:
+        problems.append(f"{tag}: Play-In tree shows {n} series cards, expected 6")
+    if final and ("win the play-in" not in h1.lower() or rows != 4):
+        problems.append(f"{tag}: Play-In final has a result but the top shows {h1!r} with {rows} standings rows")
+    if not final and rows:
+        problems.append(f"{tag}: Play-In final unplayed but the top shows {rows} standings rows")
 
 
 def check_more_sheet(page, tag, problems):

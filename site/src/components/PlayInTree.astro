@@ -1,0 +1,54 @@
+---
+/* Play-In double-elimination tree. Desktop (1000px and up): the upper row R1-A, R1-B -> Winners' match -> Final and the
+   lower row Elimination -> Lower final -> Final on a 4 card + 3 connector column grid (the page top's four-column edges),
+   three equal rows so each card sits on its feeders' midline. Connectors are CSS borders. Tablet: two columns in round
+   order. Phone: one column in round order, the round label on each card. Cards stay selectable (public/js/select.js). */
+import SeriesCard from './SeriesCard.astro';
+import type { Series } from '../lib/data';
+interface Props { rows: Series[]; sel?: string }
+const { rows, sel } = Astro.props;
+const byId = new Map(rows.map((s) => [s.id, s]));
+const SLOTS: [string, string][] = [['PI-R1-A', 'Round 1'], ['PI-R1-B', 'Round 1'], ['PI-WM', "Winners' match"], ['PI-EM', 'Elimination'], ['PI-LF', 'Lower final'], ['PI-GF', 'Final']];
+---
+<div class="tree">
+  {SLOTS.map(([id, name]) => { const s = byId.get(id); return s && (
+    <div class:list={['slot', id.toLowerCase()]}>
+      <SeriesCard s={s} detail={`sd-${s.id}`} selected={s.id === sel} round={name} label={name} final={id === 'PI-GF'} />
+    </div>
+  ); })}
+  <p class="lower caption"><span class="lh">Lower bracket</span> The round 1 losers meet in the elimination match; its winner plays the winners' match loser.</p>
+  <span class="cn c-r1" aria-hidden="true"></span>
+  <span class="cn c-em line" aria-hidden="true"></span>
+  <span class="cn c-wm line" aria-hidden="true"></span>
+  <span class="cn c-gf" aria-hidden="true"></span>
+</div>
+<style>
+  .tree { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-xs) var(--space-md); }
+  .slot { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+  .cn, .lower { display: none; }
+  @media (min-width: 1000px) {
+    /* columns: card, connector, card, connector, card, connector, card; rows equal so midlines are known fractions */
+    .tree { grid-template-columns: minmax(0, 1fr) var(--space-md) minmax(0, 1fr) var(--space-md) minmax(0, 1fr) var(--space-md) minmax(0, 1fr); grid-template-rows: repeat(3, 1fr); gap: 0; }
+    .slot { padding-block: var(--space-2xs); }
+    .pi-r1-a { grid-area: 1 / 1; } .pi-r1-b { grid-area: 2 / 1; }
+    .pi-wm { grid-area: 1 / 3 / 3; } .pi-em { grid-area: 3 / 3; }
+    .pi-lf { grid-area: 3 / 5; } .pi-gf { grid-area: 1 / 7 / 4; }
+    .lower { display: flex; flex-direction: column; justify-content: center; gap: var(--space-3xs); grid-area: 3 / 1; padding-right: var(--space-sm); }
+    .lh { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: var(--track-caps); color: var(--muted2); }
+    .cn { display: block; position: relative; }
+    .cn::before, .cn::after { content: ''; position: absolute; border: 0 solid var(--marker); }
+    /* a feeder pair: the bracket joins the two midlines (--t from the top, --b from the bottom), one line out at 50% */
+    .cn::before { left: 0; width: 50%; top: var(--t); bottom: var(--b); border-width: 2px 2px 2px 0; border-radius: 0 6px 6px 0; }
+    .cn::after { left: 50%; right: 0; top: calc(50% - 1px); border-top-width: 2px; }
+    .cn.line::before { display: none; }
+    .cn.line::after { left: 0; }
+    .c-r1 { grid-area: 1 / 2 / 3; --t: calc(25% - 1px); --b: calc(25% - 1px); }
+    .c-em { grid-area: 3 / 4; }
+    .c-wm { grid-area: 1 / 4 / 3 / 6; }
+    /* the final's feeders: the winners' match midline (1 row of 3) and the lower final's (2.5 rows of 3) */
+    .c-gf { grid-area: 1 / 6 / 4; --t: calc(100% / 3 - 1px); --b: calc(100% / 6 - 1px); }
+  }
+  @media (max-width: 640px) {
+    .tree { display: flex; flex-direction: column; gap: var(--space-2xs); }
+  }
+</style>

@@ -1,6 +1,7 @@
 ---
 /* One series in a bracket, per design/lore/Play-In.dc.html and Knockouts.dc.html.
-   Favourite on top with its win chance (or the final score once played), a split bar and a note.
+   Favourite on top with its win chance, a split bar and the score call; once played the winner on top (--fg, the loser
+   --muted) with the score, our call as a small tag and the call we made as the note.
    detail = id of a SeriesDetail to show: renders a selectable <button> (public/js/select.js), otherwise a static card.
    round = phone meta label (the bracket column); label = round name shown before the time on desktop too. */
 import Logo from './Logo.astro';
@@ -30,9 +31,7 @@ const hit = !!r && r.winner === pick;
 const tag = hit ? 'Called it' : `Picked ${pick}, wrong`;
 const hi = r ? Math.max(Number(r.score_a), Number(r.score_b)) : 0;
 const lo = r ? Math.min(Number(r.score_a), Number(r.score_b)) : 0;
-const note = tbd ? s.tbd_note ?? '' : !r
-  ? `Likeliest ${fav} ${s.score || 'UNKNOWN'} (${pct(s.p_score)})`
-  : hit ? `Called it. Score call ${s.score} ${`${hi}-${lo}` === s.score ? 'hit' : 'missed'}` : `Picked ${pick}, wrong.`;
+const note = tbd ? s.tbd_note ?? '' : !r ? `Likeliest ${fav} ${s.score || 'UNKNOWN'} (${pct(s.p_score)})` : `Our call ${pick} ${s.score || 'UNKNOWN'}`;
 const lead = r ? 0 : tbd && (s.p_series_a ?? 1) < 0.5 ? 1 : 0;
 const rows = [
   { code: fav, right: r ? String(gf ?? 'UNKNOWN') : tbd ? pct(s.p_series_a) : pct(s.p_winner) },
@@ -48,7 +47,7 @@ const attrs = detail ? { type: 'button', 'data-show': detail, 'aria-controls': d
       {r ? <span class:list={['tag', hit ? 'teal' : 'risk']}>{tag}</span> : !tbd && <Tier tier={s.tier} />}
     </span>
   )}
-  <span class="meta dt"><span>{label ? `${label}, ` : ''}<span class="nw">{time}</span></span>{!tbd && <Tier tier={s.tier} />}</span>
+  <span class="meta dt"><span>{label ? `${label}, ` : ''}<span class="nw">{time}</span></span>{r ? <span class:list={['tag', hit ? 'teal' : 'risk']}>{hit ? tag : 'Wrong'}</span> : !tbd && <Tier tier={s.tier} />}</span>
   <span class="teams dt">
     {rows.map((x, i) => (
       <>
@@ -58,9 +57,9 @@ const attrs = detail ? { type: 'button', 'data-show': detail, 'aria-controls': d
       </>
     ))}
   </span>
-  <span class="split dt" style={`--pa:${pa ?? 50}`} aria-hidden="true"><i></i><i></i></span>
+  {!r && <span class="split dt" style={`--pa:${pa ?? 50}`} aria-hidden="true"><i></i><i></i></span>}
   <span class:list={['notes', { dt: !assumed }]}>
-    <span class:list={['note', 'dt', r ? (hit ? 'teal' : 'risk') : 'fg2']}>{note}</span>
+    <span class:list={['note', 'dt', r ? 'muted' : 'fg2']}>{note}</span>
     {assumed && <span class="assumed">Assumed pairing: favourites win the earlier rounds</span>}
   </span>
   <span class="line ph">
@@ -91,7 +90,7 @@ const attrs = detail ? { type: 'button', 'data-show': detail, 'aria-controls': d
   .assumed { font-size: var(--fs-xs); color: var(--muted); }
   .tbdm { width: 28px; height: 28px; display: inline-grid; place-items: center; border-radius: 50%; border: 1px dashed var(--line-head); color: var(--dim); font-weight: 700; }
   .ph { display: none; }
-  .tag { font-size: var(--fs-xs); font-weight: 600; }
+  .tag { font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; }
   @media (max-width: 640px) {
     .dt { display: none; }
     .ph { display: flex; }

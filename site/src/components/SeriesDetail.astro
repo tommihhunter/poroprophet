@@ -1,7 +1,9 @@
 ---
 /* Detail panel for one series (design/lore/Play-In.dc.html): title with both logos, call chips, the matchup
    write-up and a bar for every exact score. Score chances come from the row's `exact` field ("3-0:26.5% 0-3:12.9% ...",
-   games from team_a's side); without it only the favourite's pw30/pw31/pw32 are shown, never invented. */
+   games from team_a's side); without it only the favourite's pw30/pw31/pw32 are shown, never invented.
+   Played: the result leads (winner, score, our call v the actual score) and the score chances fold into
+   "What the model expected" with the actual score's row marked. */
 import Logo from './Logo.astro';
 import { pct } from '../lib/format';
 import { resultFor } from '../lib/stage';
@@ -15,6 +17,8 @@ const dog = fav === s.team_a ? s.team_b : s.team_a;
 const r = resultFor(s);
 const hi = r ? Math.max(Number(r.score_a), Number(r.score_b)) : 0;
 const lo = r ? Math.min(Number(r.score_a), Number(r.score_b)) : 0;
+const loser = r && (r.winner === s.team_a ? s.team_b : s.team_a);
+const actual = r ? `${r.winner} ${hi}-${lo}` : '';
 
 type Sc = { label: string; p: number; fav: boolean; margin: number };
 let scores: Sc[] = [...(s.exact || '').matchAll(/(\d+)-(\d+):([\d.]+)%/g)].map(([, x, y, p]) => {
@@ -39,40 +43,72 @@ import Icon from './Icon.astro';
 // a write-up that opens with a lane ("Top lane: ...", "Jungle tempo: ...") gets that lane's icon
 const LANE = /^(Top|Jungle|Mid|Bot|Support)\b[^:]{0,12}:/;
 ---
-<section class="panel sd" id={id} data-detail hidden={hidden} aria-label={`${fav} v ${nm(dog)}`}>
+<section class="panel sd" id={id} data-detail hidden={hidden} aria-label={r ? `${r.winner} beat ${loser} ${hi}-${lo}` : `${fav} v ${nm(dog)}`}>
   <div class="main">
-    <div class="title">
-      <Logo code={fav} size={44} />
-      <h3>{fav} v {nm(dog)}</h3>
-      {!tbd && <Logo code={dog} size={44} />}
-    </div>
-    <div class="chips">
-      <span class="chip lock">{fav} to win {pct(tbd ? s.p_series_a : s.p_winner)}</span>
-      {!tbd && <span class="chip outline">Score call {s.score || 'UNKNOWN'} ({pct(s.p_score)})</span>}
-      {!tbd && <span class="chip outline">{s.tier || 'UNKNOWN'}</span>}
-      {r && <span class:list={['chip', 'outline', r.winner === fav ? 'teal' : 'risk']}>Final: {r.winner} {hi}-{lo}</span>}
-    </div>
+    {r ? (
+      <div class="title">
+        <Logo code={r.winner!} size={44} />
+        <h3>{r.winner} beat {loser} {hi}-{lo}</h3>
+        <Logo code={loser!} size={44} />
+      </div>
+    ) : (
+      <div class="title">
+        <Logo code={fav} size={44} />
+        <h3>{fav} v {nm(dog)}</h3>
+        {!tbd && <Logo code={dog} size={44} />}
+      </div>
+    )}
+    {r ? (
+      <div class="chips">
+        <span class:list={['chip', 'outline', r.winner === fav ? 'teal' : 'risk']}>Our call {fav} {pct(s.p_winner)}, {r.winner === fav ? 'right' : 'wrong'}</span>
+        <span class:list={['chip', 'outline', `${hi}-${lo}` === s.score && r.winner === fav ? 'teal' : '']}>Score call {fav} {s.score || 'UNKNOWN'}, actual {hi}-{lo}</span>
+        {s.tier && <span class="chip outline">{s.tier}</span>}
+      </div>
+    ) : (
+      <div class="chips">
+        <span class="chip lock">{fav} to win {pct(tbd ? s.p_series_a : s.p_winner)}</span>
+        {!tbd && <span class="chip outline">Score call {s.score || 'UNKNOWN'} ({pct(s.p_score)})</span>}
+        {!tbd && <span class="chip outline">{s.tier || 'UNKNOWN'}</span>}
+      </div>
+    )}
     {caveat && <p class="caption">{caveat}</p>}
     {tbd && <p class="caption">{s.tbd_note} {fav}'s chance weighs both possible opponents by how likely each is to come through.</p>}
     {notes.length
       ? <dl class="kv">{notes.map(([k, v]) => { const m = LANE.exec(v); return <><dt>{k}</dt><dd>{m ? <><span class="lane"><Icon name={m[1]} size={20} label={m[1]} /></span> {v.slice(m[0].length).trim()}</> : v}</dd></>; })}</dl>
-      : <p class="none muted2">The matchup write-up is added once both teams are known.</p>}
+      : !r && <p class="none muted2">The matchup write-up is added once both teams are known.</p>}
   </div>
-  <div class="odds">
-    <span class="eyebrow">Score chances</span>
-    {scores.length ? (
-      <div class="rows">
-        {scores.map((x) => (
-          <div class="sr">
-            <span class="fg2">{x.label}</span>
-            <span class:list={['bar', x.fav ? 'teal' : 'alt']}><i style={`width:${((x.p / max) * 100).toFixed(0)}%`}></i></span>
-            <span class="r num">{pct(x.p, 1)}</span>
-          </div>
-        ))}
-      </div>
-    ) : <p class="caption">{tbd ? 'Score chances come once the opponent is known.' : 'Score chances UNKNOWN.'}</p>}
-    {!tbd && <span class="caption foot">A {s.score || 'UNKNOWN'} call is the single likeliest score, not a certainty.</span>}
-  </div>
+  {r ? (
+    <details class="odds exp">
+      <summary>What the model expected</summary>
+      {scores.length ? (
+        <div class="rows">
+          {scores.map((x) => (
+            <div class:list={['sr', { act: x.label === actual }]}>
+              <span class="fg2">{x.label}{x.label === actual && <span class="actag"> actual</span>}</span>
+              <span class:list={['bar', x.fav ? 'teal' : 'alt']}><i style={`width:${((x.p / max) * 100).toFixed(0)}%`}></i></span>
+              <span class="r num">{pct(x.p, 1)}</span>
+            </div>
+          ))}
+        </div>
+      ) : <p class="caption">Score chances UNKNOWN.</p>}
+    </details>
+  ) : (
+    <div class="odds">
+      <span class="eyebrow">Score chances</span>
+      {scores.length ? (
+        <div class="rows">
+          {scores.map((x) => (
+            <div class="sr">
+              <span class="fg2">{x.label}</span>
+              <span class:list={['bar', x.fav ? 'teal' : 'alt']}><i style={`width:${((x.p / max) * 100).toFixed(0)}%`}></i></span>
+              <span class="r num">{pct(x.p, 1)}</span>
+            </div>
+          ))}
+        </div>
+      ) : <p class="caption">{tbd ? 'Score chances come once the opponent is known.' : 'Score chances UNKNOWN.'}</p>}
+      {!tbd && <span class="caption foot">A {s.score || 'UNKNOWN'} call is the single likeliest score, not a certainty.</span>}
+    </div>
+  )}
 </section>
 <style>
   .sd { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--space-xl); padding: var(--space-lg); }
@@ -94,4 +130,13 @@ const LANE = /^(Top|Jungle|Mid|Bot|Support)\b[^:]{0,12}:/;
     .sr { grid-template-columns: 80px minmax(0, 1fr) 48px; gap: var(--space-2xs); }
   }
   .lane { display: inline-flex; font-weight: 600; color: var(--fg); }
+  /* played: the model's score chances fold away under the result */
+  .exp summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; gap: var(--space-xs); color: var(--muted2); }
+  .exp summary::-webkit-details-marker { display: none; }
+  .exp summary::before { content: '+'; color: var(--gold); width: 1ch; }
+  .exp[open] summary::before { content: "−"; }
+  .exp summary:hover { color: var(--fg); }
+  .exp[open] summary { margin-bottom: var(--space-xs); }
+  .sr.act .fg2 { color: var(--fg); font-weight: 600; }
+  .actag { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--teal); }
 </style>

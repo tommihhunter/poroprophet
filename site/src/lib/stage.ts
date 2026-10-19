@@ -2,6 +2,8 @@
 // Frozen / Latest rules ported from dashboard/index.html (predictions script: latestSet, bracket, draw).
 import { pickems, results, series, swiss, type Series } from './data';
 import { nzToday, pickemSlots, resultFor, started } from './grading';
+import { matchState } from './live';
+import { swissState } from './swiss';
 
 export { resultFor, started };
 
@@ -193,3 +195,61 @@ export const stagePickems = (stage: string) => {
   return pickemSlots().map((x, i) => ({ ...x, p: p[i].p_correct, status: p[i].status })).filter((x) => x.stage === stage);
 };
 
+
+// ---------- stage state: before, during, after (docs/superpowers/plans/2026-10-19-adaptive-stages.md) ----------
+export type StageState = 'before' | 'during' | 'after';
+/** A finished series: winner, loser, score "3-1" (null when not entered) and riot = only Riot's state has it so far. */
+export type Outcome = { winner: string; loser: string; score: string | null; riot: boolean };
+const scoreOf = (a?: number | null, b?: number | null) => (a == null || b == null ? null : `${Math.max(a, b)}-${Math.min(a, b)}`);
+/** Riot completed with a winner counts as a result ("official stats to follow"); never for a half-settled slot. */
+function riotOutcome(s: Series): Outcome | null {
+  const m = s.team_b === 'TBD' ? null : matchState(s);
+  if (m?.state !== 'completed' || m.wins_a === m.wins_b) return null;
+  const aWon = m.wins_a > m.wins_b;
+  return { winner: aWon ? s.team_a : s.team_b, loser: aWon ? s.team_b : s.team_a, score: scoreOf(m.wins_a, m.wins_b), riot: true };
+}
+/** The result of slot `id`: our results row (gol.gg) by id, else Riot's completed state for the stage row. */
+function slotOutcome(id: string, rows: Series[]): Outcome | null {
+  const r = results().find((x) => x.id === id && x.winner);
+  if (r) return { winner: r.winner!, loser: (r.winner === r.team_a ? r.team_b : r.team_a) ?? 'UNKNOWN', score: scoreOf(r.score_a, r.score_b), riot: false };
+  const s = rows.find((x) => x.id === id);
+  return s ? riotOutcome(s) : null;
+}
+const stageRows = (id: Stage['id']) => view(STAGES.find((x) => x.id === id)!, 'latest').rows;
+const begun = (s: Series) => !!resultFor(s) || started(s) || ['inProgress', 'completed'].includes(matchState(s)?.state ?? '');
+
+/** Play-In outcome once the final has a result: standings 1 final winner, 2 final loser, 3 lower-final loser, 4 elimination loser. */
+export function playInOutcome(): (Outcome & { standings: string[] }) | null {
+  const rows = stageRows('play-in');
+  const f = slotOutcome('PI-GF', rows);
+  return f && { ...f, standings: [f.winner, f.loser, slotOutcome('PI-LF', rows)?.loser ?? 'UNKNOWN', slotOutcome('PI-EM', rows)?.loser ?? 'UNKNOWN'] };
+}
+/** Knockouts outcome once the final has a result: champion (winner), finalist (loser), the two semifinal losers. */
+export function knockoutsOutcome(): (Outcome & { semifinalists: string[] }) | null {
+  const rows = stageRows('knockouts');
+  const f = slotOutcome('KO-F', rows);
+  return f && { ...f, semifinalists: ['KO-SF1', 'KO-SF2'].map((id) => slotOutcome(id, rows)?.loser ?? 'UNKNOWN') };
+}
+
+export function stageState(id: Stage['id']): StageState {
+  const rows = stageRows(id);
+  const phase = STAGES.find((x) => x.id === id)!.phase;
+  if (id === 'play-in' ? playInOutcome() : id === 'knockouts' ? knockoutsOutcome() : (() => { const x = swissState(); return x.qualified.length >= 8 && x.eliminated.length >= 8; })()) return 'after';
+  return rows.some(begun) || results().some((r) => r.phase === phase && r.winner) ? 'during' : 'before';
+}
+
+/** What we had at the lock for the stage's headline slot: the Play-In or Knockouts final Pick'Ems pick and its chance. */
+export function lockPick(stage: 'Play-In' | 'Knockouts'): { pick: string; p: number | null } | null {
+  const p = pickems().find((x) => x.stage === stage && x.slot_id === (stage === 'Play-In' ? 'PI-GF' : 'KO-F'));
+  return p ? { pick: p.pick, p: p.p_correct ?? null } : null;
+}
+/** Swiss Pick'Ems picks (3-0, 0-3, advance) with hit = true / false once the team finished, null before. */
+export function swissLockPicks() {
+  const st = swissState();
+  const rec = new Map([...st.qualified, ...st.eliminated].map((x) => [x.team, x.record]));
+  return pickems().filter((x) => x.stage === 'Swiss').map((x) => {
+    const r = rec.get(x.pick);
+    const hit = r == null ? null : x.slot_id === 'SW-3-0' ? r === '3-0' : x.slot_id === 'SW-0-3' ? r === '0-3' : r === '3-1' || r === '3-2';
+    return { slot: x.slot, slot_id: x.slot_id, pick: x.pick, p: x.p_correct, hit };
+  });
+}

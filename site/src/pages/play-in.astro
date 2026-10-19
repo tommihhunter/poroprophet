@@ -3,25 +3,35 @@
 import LiveNow from '../components/LiveNow.astro';
 import Base from '../layouts/Base.astro';
 import Logo from '../components/Logo.astro';
-import SeriesCard from '../components/SeriesCard.astro';
+import PlayInTree from '../components/PlayInTree.astro';
 import SeriesDetail from '../components/SeriesDetail.astro';
 import { live, pickems, ratings, results } from '../lib/data';
 import { pct } from '../lib/format';
 import { pickemPoints } from '../lib/grading';
 import { url } from '../lib/url';
-import { STAGES, bySchedule, resultFor, setLabel, stagePickems, started, view } from '../lib/stage';
+import { STAGES, bySchedule, lockPick, playInOutcome, resultFor, setLabel, stagePickems, started, view } from '../lib/stage';
+import { SWISS_POOLS, SWISS_ROUND_DAYS } from '../lib/swiss';
 import type { Series } from '../lib/data';
 
 const st = STAGES[0];
 const v = view(st, 'latest');
 const byId = new Map(v.rows.map((s) => [s.id, s]));
-const LABEL: Record<string, string> = { 'PI-WM': "Winners' match", 'PI-EM': 'Elimination' };
 const cols = (st.brackets ?? []).map(([name, ids]) => ({ name, items: ids.map((id) => byId.get(id)).filter((s): s is Series => !!s) }));
 const all = cols.flatMap((c) => c.items);
 const played = all.filter((s) => resultFor(s)).sort(bySchedule);
 const sel = (played.at(-1) ?? all[0])?.id;
 const dates = all.map((s) => (s.time_nz || '').slice(0, 10)).filter(Boolean).sort((a, b) => a.split('/').reverse().join('').localeCompare(b.split('/').reverse().join('')));
 const span = dates.length ? `${dates[0].slice(0, 5)} to ${dates.at(-1)}` : 'UNKNOWN';
+
+// After the final: the outcome leads (winner, final score, what we had at the lock, standings 1 to 4)
+const done = playInOutcome();
+const lock = lockPick('Play-In');
+const nextFor = (t: string) => {
+  const pool = SWISS_POOLS().findIndex((p) => p.includes(t)) + 1;
+  const r1 = (results() as (ReturnType<typeof results>[number] & { round?: number })[]).find((r) => r.phase === 'Swiss' && r.kind === 'series' && Number(r.round) === 1 && (r.team_a === t || r.team_b === t));
+  return `Swiss${pool ? `, pool ${pool}` : ''}${r1 ? `, v ${r1.team_a === t ? r1.team_b : r1.team_a} on ${SWISS_ROUND_DAYS[1]}` : ''}`;
+};
+const shortSpan = dates.length ? `${dates[0].slice(0, 2)} to ${dates.at(-1)!.slice(0, 5)}` : 'UNKNOWN';
 
 // Who wins the Play-In: live odds when the pipeline has them, else the ratings at the baseline.
 const teams = ratings().filter((r) => r.p_playin != null);
@@ -37,7 +47,9 @@ const picks = stagePickems(st.pickemsStage).map((p, i) => ({ ...p, alternatives:
 const pts = pickemPoints().find((p) => p.stage === st.pickemsStage);
 const lockText = picks[0]?.status.match(/lock (\d\d\/\d\d\/\d{4} \d\d:\d\d NZDT)/)?.[1] ?? st.lock.match(/^\S+ \S+ NZDT/)?.[0] ?? 'UNKNOWN';
 const locked = started({ time_nz: lockText } as Series);
-const pickCap = `${locked ? 'Locked' : 'Locks'} ${lockText}. ${pts?.max ?? 'UNKNOWN'} points available${pts && pts.possible ? `, ${pts.earned} earned so far` : ''}`;
+const decided = picks.filter((p) => p.actual).length;
+const hits = picks.filter((p) => p.actual && p.actual === p.pick).length;
+const pickCap = `${locked ? 'Locked' : 'Locks'} ${lockText}. ${decided} of ${picks.length} slots decided.`;
 
 const createdNz = (v.rows[0]?.created_nz ?? 'UNKNOWN').replace(/(\d\d:\d\d):\d\d/, '$1');
 const key = (d: string) => d.replace(/(\d\d)\/(\d\d)\/(\d{4})/, '$3$2$1');
@@ -45,41 +57,57 @@ const accessed = results().map((r) => (r as { source?: { accessed?: string } }).
 const footer = `Predicted ${createdNz} (${v.set === 'baseline' ? 'frozen baseline' : `latest staged run, ${setLabel(v.set)}`}). ${accessed ? `Results: gol.gg, accessed ${accessed}.` : 'No results entered yet.'}`;
 ---
 <Base title="Play-In" active="play-in" description="Four teams, one Swiss spot: the Play-In bracket, series odds and our Pick'Ems." footer={{ left: footer }}>
-  <section class="top">
-    <div class="intro">
-      <span class="eyebrow">Play-In, Los Angeles, {span} NZDT</span>
-      <h1>Four teams, one Swiss spot</h1>
-      <p class="lede">Double elimination, every series Bo5 with Fearless Draft. The winner joins the Swiss stage.</p>
-      <LiveNow phase="Play-In" />
-    </div>
-    <div class="panel win">
-      <span class="eyebrow">Who wins the Play-In</span>
-      <div class="rows">
-        {odds.map((o) => (
-          <div class:list={['wr', { out: o.out }]}>
-            <Logo code={o.code} size={28} />
-            <span class="code">{o.code}</span>
-            <span class="bar"><i style={`width:${(((o.p ?? 0) / top) * 100).toFixed(0)}%`}></i></span>
-            <span class="r num">{o.out ? 'Out' : pct(o.p)}</span>
-          </div>
-        ))}
+  {done ? (
+    <section class="top">
+      <div class="intro">
+        <span class="eyebrow">Play-In, {shortSpan}</span>
+        <h1>{done.winner} win the Play-In</h1>
+        <p class="lede">Beat {done.loser} {done.score ?? 'UNKNOWN'} in the final{done.riot && ', official stats to follow'}.</p>
+        <p class="muted">We had {lock?.pick ?? 'UNKNOWN'} at {pct(lock?.p)} at the lock. {lock && (lock.pick === done.winner ? <span class="teal">Called it.</span> : <span class="risk">Picked {lock.pick}, wrong.</span>)}</p>
       </div>
-      {liveStamp && <span class="caption">Live odds after the results so far, {liveStamp}.</span>}
-    </div>
-  </section>
-
+      <div class="panel stand">
+        <span class="eyebrow">Final standings</span>
+        <ol class="rows">
+          {done.standings.map((t, i) => (
+            <li class:list={['sr', { out: i > 0 }]}>
+              <span class="rk num">{i + 1}</span>
+              <Logo code={t} size={28} />
+              <span class="code">{t}</span>
+              <span class="nx">{i === 0 ? nextFor(t) : 'Out'}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  ) : (
+    <section class="top">
+      <div class="intro">
+        <span class="eyebrow">Play-In, Los Angeles, {span} NZDT</span>
+        <h1>Four teams, one Swiss spot</h1>
+        <p class="lede">Double elimination, every series Bo5 with Fearless Draft. The winner joins the Swiss stage.</p>
+        <LiveNow phase="Play-In" />
+      </div>
+      <div class="panel win">
+        <span class="eyebrow">Who wins the Play-In</span>
+        <div class="rows">
+          {odds.map((o) => (
+            <div class:list={['wr', { out: o.out }]}>
+              <Logo code={o.code} size={28} />
+              <span class="code">{o.code}</span>
+              <span class="bar"><i style={`width:${(((o.p ?? 0) / top) * 100).toFixed(0)}%`}></i></span>
+              <span class="r num">{o.out ? 'Out' : pct(o.p)}</span>
+            </div>
+          ))}
+        </div>
+        {liveStamp && <span class="caption">Live odds after the results so far, {liveStamp}.</span>}
+      </div>
+    </section>
+  )}
   <div class="pick" data-select>
     <section class="section">
       <div class="section-head"><h2>Bracket</h2><span>Select a series for the detail. Times NZDT.</span></div>
       {v.stageNote && <p class="caption">{v.stageNote}</p>}
-      <div class="bracket">
-        {cols.map((c) => (
-          <div class="col">
-            <span class="colhead">{c.name}</span>
-            {c.items.map((s) => <SeriesCard s={s} detail={`sd-${s.id}`} selected={s.id === sel} round={c.name} label={LABEL[s.id]} />)}
-          </div>
-        ))}
-      </div>
+      <PlayInTree rows={all} sel={sel} />
     </section>
     {all.map((s) => <SeriesDetail s={s} id={`sd-${s.id}`} hidden={s.id !== sel} />)}
   </div>
@@ -87,24 +115,30 @@ const footer = `Predicted ${createdNz} (${v.set === 'baseline' ? 'frozen baselin
   <section class="section">
     <div class="section-head"><h2>Our Play-In Pick'Ems</h2><span>{pickCap}</span></div>
     {picks.length ? (
-      <div class="scroll" tabindex="0" role="region" aria-label="Our Play-In Pick'Ems, scrolls sideways">
-        <table class="pk">
-          <thead><tr><th>Slot</th><th>Our pick</th><th>Chance right at the lock</th><th class="fld">Field</th><th class="r">Status</th></tr></thead>
-          <tbody>
-            {picks.map((p) => (
-              <tr>
-                <td>{p.slot.replace(' vs ', ' v ')}</td>
-                <td><span class="pickc"><Logo code={p.pick} size={26} /><span class="code">{p.pick}</span></span></td>
-                <td>{pct(p.p)}</td>
-                <td class="fld muted2">{p.alternatives || 'UNKNOWN'}</td>
-                <td class:list={['r', 'st', p.actual ? (p.actual === p.pick ? 'teal' : 'risk') : 'muted']}>
-                  {p.actual ? (p.actual === p.pick ? `Hit, +${p.earned ?? p.points ?? 'UNKNOWN'}` : 'Miss') : 'Pending'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <>
+        <p class="pkey"><span class="big">{pts?.earned ?? 'UNKNOWN'} of {pts?.max ?? 'UNKNOWN'} points</span><span class="fg2">{hits} of {picks.length} right</span></p>
+        <div class="scroll" tabindex="0" role="region" aria-label="Our Play-In Pick'Ems, scrolls sideways">
+          <table class="pk">
+            <thead><tr><th>Slot</th><th>Our pick</th><th>Chance at the lock</th><th class="r">Result</th></tr></thead>
+            <tbody>
+              {picks.map((p) => (
+                <tr>
+                  <td>{p.slot.replace(' vs ', ' v ')}</td>
+                  <td><span class="pickc"><Logo code={p.pick} size={26} /><span class="code">{p.pick}</span></span></td>
+                  <td>{pct(p.p)}</td>
+                  <td class:list={['r', 'st', p.actual ? (p.actual === p.pick ? 'teal' : 'risk') : 'muted']}>
+                    {p.actual ? (p.actual === p.pick ? `Hit +${p.earned ?? p.points ?? 'UNKNOWN'}` : 'Miss') : 'Pending'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <details class="fld">
+          <summary>The field at the lock</summary>
+          <dl class="kv">{picks.map((p) => <><dt>{p.slot.replace(' vs ', ' v ')}</dt><dd class="fg2">{p.alternatives || 'UNKNOWN'}</dd></>)}</dl>
+        </details>
+      </>
     ) : <p class="caption">Play-In picks not available yet.</p>}
   </section>
   <noscript><style>.pick [data-detail][hidden] { display: grid !important; }</style></noscript>
@@ -125,21 +159,31 @@ const footer = `Predicted ${createdNz} (${v.set === 'baseline' ? 'frozen baselin
   .wr.out { color: var(--muted); }
   .wr.out :global(img) { opacity: .45; }
   .pick { display: flex; flex-direction: column; gap: var(--space-xl); min-width: 0; }
-  /* columns share the bracket's rows (subgrid), so every card in a row is the same height */
-  .bracket { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-xs) var(--space-md); }
-  .col { display: grid; grid-row: span 3; grid-template-rows: subgrid; min-width: 0; }
-  .colhead { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: var(--track-caps); color: var(--muted2); }
-  .pk th:nth-child(1) { width: 22%; } .pk th:nth-child(2) { width: 16%; } .pk th:nth-child(3) { width: 18%; }
+  /* after: the standings, the winner's row --fg with where they go next, the rest --muted */
+  .stand { display: flex; flex-direction: column; gap: var(--space-2xs); }
+  .stand .rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2xs); }
+  .stand .sr { display: grid; grid-template-columns: 20px 28px 80px minmax(0, 1fr); align-items: center; gap: var(--space-xs); }
+  .stand .rk { color: var(--dim); }
+  .stand .code { font-size: var(--fs-lg); line-height: var(--lh-tight); }
+  .stand .nx { text-align: right; color: var(--fg2); }
+  .stand .out { color: var(--muted); }
+  .stand .out .nx { color: var(--muted); }
+  .stand .out :global(img) { opacity: .6; }
+  .pkey { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2xs) var(--space-sm); }
+  .pkey .big { font-size: var(--fs-2xl); }
+  .pk th:nth-child(1) { width: 34%; } .pk th:nth-child(2) { width: 22%; } .pk th:nth-child(3) { width: 24%; }
   .pickc { display: flex; align-items: center; gap: var(--space-xs); }
   .st { font-weight: 600; white-space: nowrap; }
-  @media (max-width: 1100px) { .bracket { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .fld summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; gap: var(--space-xs); color: var(--muted2); }
+  .fld summary::-webkit-details-marker { display: none; }
+  .fld summary::before { content: '+'; color: var(--gold); width: 1ch; }
+  .fld[open] summary::before { content: "−"; }
+  .fld summary:hover { color: var(--fg); }
+  .fld[open] summary { margin-bottom: var(--space-xs); }
   @media (max-width: 1000px) { .top { grid-template-columns: minmax(0, 1fr); } }
   @media (max-width: 640px) {
     .wr { grid-template-columns: 28px 64px minmax(0, 1fr) 48px; gap: var(--space-2xs); }
-    .bracket { display: flex; flex-direction: column; gap: var(--space-2xs); }
-    .col { display: contents; }
-    .colhead { display: none; }
-    .pk .fld { display: none; }
+    .stand .sr { grid-template-columns: 16px 28px 56px minmax(0, 1fr); gap: var(--space-2xs); }
     .pk th { width: auto !important; }
   }
 </style>

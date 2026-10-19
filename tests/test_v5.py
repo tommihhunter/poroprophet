@@ -231,8 +231,8 @@ def test_hubs_rematch_and_fallbacks():
         page = lambda p: open(os.path.join(out, p, "index.html"), encoding="utf-8").read()
         html = page("play-in")
         detail = lambda i: re.findall(rf'id="sd-{i}".*?</section>', html, re.S)   # SeriesDetail panel per series
-        assert detail("PI-R1-A") and all("Final: KC 3-1" in x for x in detail("PI-R1-A"))
-        assert detail("PI-GF") and all("Final: C9 3-2" in x and "Final: KC 3-1" not in x for x in detail("PI-GF"))   # id AND pair, never pair alone
+        assert detail("PI-R1-A") and all("KC beat C9 3-1" in x for x in detail("PI-R1-A"))
+        assert detail("PI-GF") and all("C9 beat KC 3-2" in x and "KC beat C9 3-1" not in x for x in detail("PI-GF"))   # id AND pair, never pair alone
         # with the Swiss and Knockouts sets dropped above, the Swiss page shows the baseline rows and says they are preliminary
         assert "preliminary until the re-run" in page("swiss")
         assert "Check not run yet." in page("demacia-cup")
