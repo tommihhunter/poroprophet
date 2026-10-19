@@ -36,3 +36,16 @@ Each round replaced the last, so by the final the path was gone. Sites like ours
   Lock in, the previous round is still on the page with its 8 winners; "Roll to the end" reaches a champion card and the
   road shows QF, SF and Final picks; at 390 no horizontal page scroll.
 - Screenshots at 390, 1100 and 1440: start, mid-Swiss, after Roll to the end; looked at for hierarchy and overflow.
+
+## Revision (owner, 19/10/2026): fixed shape, one screen wide
+- The road's shape never changes. From the start, every slot of every round is drawn as a blank card the same size as a
+  filled one: Swiss R1 8 games; R2 1-0 x4, 0-1 x4; R3 2-0 x2, 1-1 x4, 0-2 x2; R4 2-1 x3, 1-2 x3; R5 2-2 x3; Through 8
+  slots; Out 8 slots; QF 4; SF 2; Final 1; Champion 1. A blank card shows its slot only (record group head stays, e.g.
+  "1-0", and the Bo), no team names until the pairing exists. Picks and lock-ins fill the blanks in place; no column,
+  group or card is added, removed or resized as the bracket fills. Through and Out slots fill in the order teams get there.
+- It fits the page width on desktop with no horizontal scroll at 1280 px and up (the page is drawn at 90%): eight columns:
+  R1, R2, R3, R4, R5, Through above Out, QF, then SF above Final above Champion (or SF and Final/Champion side by side if
+  that reads better and still fits). Compact cards: 18-20 px logo, code, chance or score; no wrapping of codes. Between
+  641 and 1279 px the road may scroll sideways inside its panel. Phone (390) keeps the stacked rounds with folded summaries.
+- check_site: at 1280 and 1440 the road's scrollWidth equals its clientWidth (no sideways scroll); the number of cards in
+  the road (blank plus filled) is the same at the start, after one Lock in and after Roll to the end.
