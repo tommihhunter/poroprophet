@@ -10,6 +10,7 @@ import { live, overview, ratings, teamName } from '../lib/data';
 import { pickemPoints, resultRows } from '../lib/grading';
 import { NAV, lockStage, stageLine } from '../lib/nav';
 import { STAGES, view } from '../lib/stage';
+import { swissState } from '../lib/swiss';
 import { icon } from '../lib/icons';
 import { pct } from '../lib/format';
 import { url } from '../lib/url';
@@ -53,14 +54,17 @@ const lead = champRow?.headline?.split(/\s*[(;,]/)[0]?.trim() || (champRow ? `${
 const best = eloRank === 1 ? 'with the best rating in the field' : eloRank > 1 ? `with the ${ORD[eloRank] ?? `number ${eloRank}`} best rating in the field` : 'rating UNKNOWN';
 const closing = cp == null ? '' : `${lead}, ${best}, yet ${noun} is not a certainty. ${others}`;
 
-// Likeliest final: KO-F of the latest staged run (the frozen baseline until a run has knockouts)
-const fin = view(STAGES[2], 'latest').rows.find((s) => s.id === 'KO-F');
+// Likeliest final: KO-F of the latest staged run (the frozen baseline until a run has knockouts), hidden once either
+// team is out (absent from the live odds or eliminated in the Swiss): no staged run follows the QFs or SFs.
+const out = new Set(swissState().eliminated.map((e) => e.team));
+const alive = (c: string) => (!isLive || lv.some((l) => l.team === c)) && !out.has(c);
+const fin = view(STAGES[2], 'latest').rows.find((s) => s.id === 'KO-F' && alive(s.team_a) && alive(s.team_b));
 const venue = fin && /\(([^)]+)\)/.exec(fin.time_venue)?.[1];
 const finDate = fin && /\d\d\/\d\d\/\d{4}/.exec(fin.time_nz)?.[0];
 const finalLine = fin ? `Likeliest final ${fin.team_a} v ${fin.team_b}, ${venue && finDate ? `${venue} ${finDate} NZDT` : 'venue and date UNKNOWN'}` : '';
 
-// The model so far: winners called per stage (the call the match cards show: the latest staged run's pick, else the
-// frozen baseline's; the frozen baseline's own record, which the Scorecard grades, underneath when it differs), then
+// The model so far: winners called per stage (the latest staged run's pre-start call, lib/grading.ts resultRows, else
+// the frozen baseline's; the frozen baseline's own record, which the Scorecard grades, underneath when it differs), then
 // Pick'Ems points per stage once any are decided.
 const rr = resultRows();
 const tally = (hs: (boolean | null | undefined)[]) => { const h = hs.filter((x): x is boolean => x != null); return `${h.filter(Boolean).length} of ${h.length}`; };

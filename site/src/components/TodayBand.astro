@@ -7,8 +7,8 @@
      still shows, with the pair chance.
    Before the start: both chances (favourite first, --fg; the other --muted) and the time; live (Riot inProgress) in
    green with the game score; finished winner first with our call ("Called it" / "Picked X, wrong"). Riot's state is
-   as of the last publish; for a series Riot had not started the browser clock moves the label (Starts in, Live now,
-   Result pending), the same rule as LiveNow. Build-time "today" is the NZDT date. */
+   as of the last publish; for a series with no Riot row the browser clock moves the label (Starts in, Live now,
+   Result pending), one Riot lists as unstarted reads "Starting" past its start, the same rule as LiveNow. Build-time "today" is the NZDT date. */
 import Logo from './Logo.astro';
 import { results, schedule, type Result, type Sched } from '../lib/data';
 import { nzToday } from '../lib/grading';
@@ -18,7 +18,7 @@ import { nzMs, riotRow } from '../lib/live';
 import { pct } from '../lib/format';
 import { url } from '../lib/url';
 
-type Game = { a: string; b: string; label: string; start: string | null; day: string; pa: number | null; pick: string | null; res: { w: string; wg: number; lg: number; riot: boolean } | null; live: [number, number] | null; href: string };
+type Game = { a: string; b: string; label: string; start: string | null; day: string; pa: number | null; pick: string | null; res: { w: string; wg: number; lg: number; riot: boolean } | null; live: [number, number] | null; riot: string | null; href: string };
 const used = new Set<Sched>();
 const games: Game[] = [];
 const ymd = (d: string) => d.split('/').reverse().join('');
@@ -34,7 +34,7 @@ function add(a: string, b: string, bo: number | null, label: string, start: stri
   const res = r?.winner
     ? { w: r.winner, wg: Math.max(Number(r.score_a), Number(r.score_b)), lg: Math.min(Number(r.score_a), Number(r.score_b)), riot: false }
     : rr?.state === 'completed' && wa !== wb ? { w: wa > wb ? a : b, wg: Math.max(wa, wb), lg: Math.min(wa, wb), riot: true } : null;
-  games.push({ a, b, label: bo ? `${label}, Bo${bo}` : label, start: t, day: d, pa, pick, res, live: !res && rr?.state === 'inProgress' ? [wa, wb] : null, href: hub(label) });
+  games.push({ a, b, label: bo ? `${label}, Bo${bo}` : label, start: t, day: d, pa, pick, res, live: !res && rr?.state === 'inProgress' ? [wa, wb] : null, riot: rr?.state ?? null, href: hub(label) });
 }
 
 // Play-In and Knockouts: settled pairings of the latest staged run (knockout ties only from a real knockouts run)
@@ -99,7 +99,7 @@ const cards = list.map((g) => {
     <ul class:list={['tb-list', { many: list.length > 2 }]} style={`--cols:${list.length <= 4 ? list.length : Math.ceil(list.length / 2)}`}>
       {cards.map(({ g, rows, note, state, when }) => (
         <li>
-          <a class="card tg" href={g.href} data-phase={state} data-start={state ? undefined : iso(g.start)}>
+          <a class="card tg" href={g.href} data-phase={state} data-start={state ? undefined : iso(g.start)} data-riot={g.riot ?? undefined}>
             <span class="tg-meta">
               <span class="tg-when"><i class="dot" aria-hidden="true"></i><span data-state>{when}</span></span>
               <span class="tg-label">{g.label}</span>
@@ -126,9 +126,10 @@ const cards = list.map((g) => {
       const d = Date.parse(el.dataset.start) - Date.now();
       if (d > 0 && d >= 36 * 3600e3) return;
       const st = el.querySelector('[data-state]');
-      const state = d > 0 ? 'soon' : d > -5 * 3600e3 ? 'live' : 'pending';
+      // Riot unstarted at the last publish: never Live or Result pending from the clock, "Starting" past the start
+      const state = d > 0 ? 'soon' : el.dataset.riot === 'unstarted' ? 'starting' : d > -5 * 3600e3 ? 'live' : 'pending';
       el.dataset.phase = state;
-      st.textContent = state === 'soon' ? `Starts in ${fmt(d)}` : state === 'live' ? 'Live now' : 'Result pending';
+      st.textContent = state === 'soon' ? `Starts in ${fmt(d)}` : state === 'starting' ? 'Starting' : state === 'live' ? 'Live now' : 'Result pending';
     });
     tick(); setInterval(tick, 30000);
   })();

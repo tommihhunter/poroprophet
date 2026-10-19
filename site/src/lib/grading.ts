@@ -72,21 +72,26 @@ export function pickemPoints(): { stage: string; earned: number; possible: numbe
 export type Pick = { set: string; pick: string; pick_score: string; p: number | null; tier: string; hit: boolean };
 export type ResultRow = { id: string; phase: string; stage: string; team_a: string; team_b: string; winner: string; score: string; pick: string | null; pick_score: string | null; p: number | null; tier: string | null; hit: boolean | null; staged: Pick | null };
 
-/** Each finished series beside the frozen baseline pick and the latest staged pick (scorecard_rows; no pre-start filter, as there). */
+/** Each finished series beside the frozen baseline pick and the latest staged pick made before it: the most advanced run
+ *  up to the series' own stage (a later stage's run is written after it, so its rows there are ACTUAL or post-start),
+ *  matched as grade() does, and never a call made at or after a known start. */
+const RUNS = ['playin', 'swiss', 'knockouts'], RUN_OF: Record<string, number> = { 'Play-In': 0, Swiss: 1, Knockouts: 2 };
 export function resultRows(): ResultRow[] {
-  const all = series();
-  const staged = ['knockouts', 'swiss', 'playin'].find((x) => all.some((s) => s.set === x));
-  const find = (r: Result, set: string) =>
-    all.find((s) => s.set === set && s.id === r.id && pair(s) === pair(r)) ||
-    all.find((s) => s.set === set && s.phase === r.phase && pair(s) === pair(r)) ||
-    all.find((s) => s.set === `${set}_conditional` && pair(s) === pair(r));
+  const find = (r: Result, set: string) => {
+    const s = match(r, set), made = stamp(s?.created_nz), start = stamp(r.start_nz);
+    return s && !(made && start && made >= start) ? s : undefined;
+  };
+  const stagedPick = (r: Result) => {
+    for (const set of RUNS.slice(0, (RUN_OF[r.phase] ?? 2) + 1).reverse()) { const s = find(r, set); if (s) return asPick(s, r, set); }
+    return null;
+  };
   const asPick = (s: Series | undefined, r: Result, set: string): Pick | null => (s ? { set, pick: s.winner, pick_score: s.score, p: s.p_winner, tier: s.tier, hit: s.winner === r.winner } : null);
   return done().map((r) => {
     const b = asPick(find(r, 'baseline'), r, 'baseline');
     return {
       id: r.id, phase: r.phase, stage: r.stage ?? '', team_a: r.team_a ?? '', team_b: r.team_b ?? '', winner: r.winner as string, score: `${r.score_a}-${r.score_b}`,
       pick: b?.pick ?? null, pick_score: b?.pick_score ?? null, p: b?.p ?? null, tier: b?.tier ?? null, hit: b ? b.hit : null,
-      staged: staged ? asPick(find(r, staged), r, staged) : null,
+      staged: stagedPick(r),
     };
   });
 }

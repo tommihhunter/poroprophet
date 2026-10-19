@@ -2,8 +2,9 @@
 /* "Live now / Up next": the next open series (settled pairings, both teams' chances, our pick in gold) and the latest result.
    The site only rebuilds when a result lands, so the state is worked out in the browser from each start time:
    before the start "Starts in 2h 10m", from the start "Live", from 5 hours after it "Result pending" (a Bo5 rarely
-   runs past 4 hours). Riot's state at the last publish (data/dash/schedule.json, lib/live.ts) overrides the clock: an
-   inProgress series shows "Live now" with the game score, a completed one leaves the cards and becomes the latest result
+   runs past 4 hours). Riot's state at the last publish (data/dash/schedule.json, lib/live.ts) overrides the clock and
+   its start time replaces ours: an unstarted series counts down to Riot's start and then reads "Starting", never Live
+   or Result pending; an inProgress series shows "Live now" with the game score, a completed one leaves the cards and becomes the latest result
    ("KC won 3-0 against MVK, official stats to follow") until our results row lands. Built-in results always win: a
    played series never shows here. Renders nothing when no series has a start time. Optional `phase` limits it to one stage. */
 import Logo from './Logo.astro';
@@ -19,7 +20,7 @@ const iso = (nz: string) => { const t = nzMs(nz); return t == null ? null : new 
 const open = STAGES.filter((st) => !phase || st.phase === phase)
   .flatMap((st) => view(st, 'latest').rows.map((s) => ({ s, st })))
   .filter(({ s }) => !s.actual && s.team_a && s.team_b && !resultFor(s))
-  .map((x) => ({ ...x, when: startNz(x.s), at: iso(startNz(x.s)), rs: matchState(x.s) }))
+  .map((x) => { const rs = matchState(x.s); return { ...x, rs, when: rs?.start_nz ?? startNz(x.s), at: rs ? new Date(rs.start_utc).toISOString() : iso(startNz(x.s)) }; })
   .filter((x) => x.at)
   .sort((a, b) => a.at!.localeCompare(b.at!));
 // only rows whose teams are known: Play-In rows settled by results or round 1; knockout ties only from a real
@@ -41,10 +42,10 @@ const short = (nz: string) => nz.replace(/^(\d\d\/\d\d)\/\d{4}/, '$1').replace(/
 {(known.length > 0 || riotLine) && (
   <section class="live" aria-label="Live now and up next" data-live>
     {known.map(({ s, st, when, at, rs }, i) => {
-      const live = rs?.state === 'inProgress';
+      const live = rs?.state === 'inProgress', ended = rs?.state === 'completed';
       return (
-      <a class:list={['lv', { lead: i === 0 }]} href={hub(st)} data-start={live ? undefined : at} data-phase={live ? 'live' : undefined}>
-        <span class="lv-state"><i class="dot" aria-hidden="true"></i><span data-state>{live ? 'Live now' : 'Up next'}</span></span>
+      <a class:list={['lv', { lead: i === 0 }]} href={hub(st)} data-start={live || ended ? undefined : at} data-riot={rs?.state} data-phase={live ? 'live' : ended ? 'pending' : undefined}>
+        <span class="lv-state"><i class="dot" aria-hidden="true"></i><span data-state>{live ? 'Live now' : ended ? 'Result pending' : 'Up next'}</span></span>
         <span class="lv-teams">
           <Logo code={s.team_a} size={i === 0 ? 40 : 24} /><span class="code">{s.team_a}</span>
           {live ? <span class="lv-score">{rs!.wins_a}-{rs!.wins_b}</span> : <span class="muted">v</span>}
@@ -66,14 +67,15 @@ const short = (nz: string) => nz.replace(/^(\d\d\/\d\d)\/\d{4}/, '$1').replace(/
 )}
 <script is:inline>
   // Live state from the clock for cards Riot had not started at the last publish. Runs now and every 30 s; no network.
+  // A card Riot lists as unstarted never turns Live or Result pending from the clock: past its start it reads "Starting".
   (() => {
     const fmt = (ms) => { const m = Math.round(ms / 60000); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
     const tick = () => document.querySelectorAll('[data-live] [data-start]').forEach((el) => {
       const d = Date.parse(el.dataset.start) - Date.now();
       const st = el.querySelector('[data-state]');
-      const state = d > 0 ? 'soon' : d > -5 * 3600e3 ? 'live' : 'pending';
+      const state = d > 0 ? 'soon' : el.dataset.riot === 'unstarted' ? 'starting' : d > -5 * 3600e3 ? 'live' : 'pending';
       el.dataset.phase = state;
-      st.textContent = state === 'soon' ? (d < 36 * 3600e3 ? `Starts in ${fmt(d)}` : 'Up next') : state === 'live' ? 'Live now' : 'Result pending';
+      st.textContent = state === 'soon' ? (d < 36 * 3600e3 ? `Starts in ${fmt(d)}` : 'Up next') : state === 'starting' ? 'Starting' : state === 'live' ? 'Live now' : 'Result pending';
     });
     tick(); setInterval(tick, 30000);
   })();
