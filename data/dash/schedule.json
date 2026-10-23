@@ -9,7 +9,7 @@
 "team_b": "C9",
 "wins_a": 3,
 "wins_b": 2,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-15T23:00:00Z",
@@ -21,7 +21,7 @@
 "team_b": "FURIA",
 "wins_a": 3,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-16T18:00:00Z",
@@ -33,7 +33,7 @@
 "team_b": "MVK",
 "wins_a": 3,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-16T23:00:00Z",
@@ -45,7 +45,7 @@
 "team_b": "C9",
 "wins_a": 3,
 "wins_b": 1,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-17T18:00:00Z",
@@ -57,7 +57,7 @@
 "team_b": "FURIA",
 "wins_a": 3,
 "wins_b": 1,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-18T18:00:00Z",
@@ -69,7 +69,7 @@
 "team_b": "MVK",
 "wins_a": 3,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-23T17:00:00Z",
@@ -81,7 +81,7 @@
 "team_b": "GEN",
 "wins_a": 0,
 "wins_b": 1,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-23T18:00:00Z",
@@ -93,7 +93,7 @@
 "team_b": "HLE",
 "wins_a": 0,
 "wins_b": 1,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-23T19:00:00Z",
@@ -105,7 +105,7 @@
 "team_b": "BLG",
 "wins_a": 1,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-23T20:00:00Z",
@@ -115,9 +115,9 @@
 "bo": 1,
 "team_a": "KC",
 "team_b": "AL",
-"wins_a": 0,
+"wins_a": 1,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-23T21:00:00Z",
@@ -129,7 +129,7 @@
 "team_b": "DK",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-23T22:00:00Z",
@@ -141,7 +141,7 @@
 "team_b": "CFO",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-23T23:00:00Z",
@@ -153,7 +153,7 @@
 "team_b": "T1",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-24T00:00:00Z",
@@ -165,7 +165,7 @@
 "team_b": "LYON",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-24T17:00:00Z",
@@ -177,7 +177,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-24T18:00:00Z",
@@ -189,7 +189,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-24T19:00:00Z",
@@ -201,7 +201,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-24T20:00:00Z",
@@ -213,7 +213,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-24T21:00:00Z",
@@ -225,7 +225,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-24T22:00:00Z",
@@ -237,7 +237,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-24T23:00:00Z",
@@ -249,7 +249,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-25T00:00:00Z",
@@ -261,7 +261,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-25T17:00:00Z",
@@ -273,7 +273,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-25T18:00:00Z",
@@ -285,7 +285,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-25T19:00:00Z",
@@ -297,7 +297,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-25T22:00:00Z",
@@ -309,7 +309,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-26T17:00:00Z",
@@ -321,7 +321,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-26T18:00:00Z",
@@ -333,7 +333,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-26T19:00:00Z",
@@ -345,7 +345,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-26T22:00:00Z",
@@ -357,7 +357,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-28T20:00:00Z",
@@ -369,7 +369,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-28T23:00:00Z",
@@ -381,7 +381,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-29T20:00:00Z",
@@ -393,7 +393,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-29T23:00:00Z",
@@ -405,7 +405,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-30T20:00:00Z",
@@ -417,7 +417,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-30T23:00:00Z",
@@ -429,7 +429,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-31T17:00:00Z",
@@ -441,7 +441,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-31T20:00:00Z",
@@ -453,7 +453,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-10-31T23:00:00Z",
@@ -465,7 +465,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-11-03T22:00:00Z",
@@ -477,7 +477,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-11-04T22:00:00Z",
@@ -489,7 +489,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-11-05T22:00:00Z",
@@ -501,7 +501,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-11-06T22:00:00Z",
@@ -513,7 +513,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-11-07T22:00:00Z",
@@ -525,7 +525,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-11-08T22:00:00Z",
@@ -537,7 +537,7 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 },
 {
 "start_utc": "2026-11-14T19:00:00Z",
@@ -549,6 +549,6 @@
 "team_b": "TBD",
 "wins_a": 0,
 "wins_b": 0,
-"fetched_nz": "24/10/2026 09:33"
+"fetched_nz": "24/10/2026 10:00"
 }
 ]
