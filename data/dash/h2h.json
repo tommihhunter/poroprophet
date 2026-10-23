@@ -1,5 +1,17 @@
 [
 {
+"a": "GEN",
+"b": "IG",
+"date": "23/10/2026",
+"tournament": "Worlds 2026 Main Event",
+"stage": "ROUND1",
+"sa": 1,
+"sb": 0,
+"bo": 1,
+"patch": "16.20",
+"year": 2026
+},
+{
 "a": "KC",
 "b": "MVK",
 "date": "18/10/2026",

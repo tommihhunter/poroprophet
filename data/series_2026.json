@@ -16000,6 +16000,22 @@
 "intl": true
 },
 {
+"date": "23/10/2026",
+"tournament": "Worlds 2026 Main Event",
+"stage": "ROUND1",
+"kind": "international",
+"league": "INTL",
+"a": "IG",
+"b": "GEN",
+"sa": 0,
+"sb": 1,
+"bo": 1,
+"region_a": "LPL",
+"region_b": "LCK",
+"patch": "16.20",
+"intl": true
+},
+{
 "date": "26/05/2026",
 "tournament": "EWC 2026 Online Qualifier - Korea",
 "stage": "ROUND4",

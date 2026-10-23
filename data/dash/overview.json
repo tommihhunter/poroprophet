@@ -45,15 +45,15 @@
 },
 {
 "key": "ratings_as_of",
-"value": "19/10/2026"
+"value": "24/10/2026"
 },
 {
 "key": "n_series",
-"value": 1081
+"value": 1082
 },
 {
 "key": "n_games",
-"value": 2780
+"value": 2781
 },
 {
 "key": "half_life",
@@ -73,7 +73,7 @@
 },
 {
 "key": "region_gap_lck_lpl",
-"value": "+0.65 logit, sd 0.60"
+"value": "+0.70 logit, sd 0.60"
 },
 {
 "key": "w_regular",
@@ -101,6 +101,6 @@
 },
 {
 "key": "exported_nz",
-"value": "24/10/2026 07:01 NZDT"
+"value": "24/10/2026 07:27 NZDT"
 }
 ]
