@@ -203,14 +203,15 @@
 "start_nz": "24/10/2026 09:00",
 "team_a": "G2",
 "team_b": "DK",
-"score_a": null,
-"score_b": null,
-"winner": null,
+"score_a": 0,
+"score_b": 1,
+"winner": "DK",
 "bo": 1,
 "source": {
-"url": "https://esports-api.lolesports.com/persisted/gw/getSchedule?hl=en-GB&leagueId=98767975604431411",
+"url": "https://gol.gg/tournament/tournament-matchlist/Worlds%202026%20Main%20Event/",
 "note": "lolesports schedule (Riot); first entered by the owner from the draw broadcast, confirmed",
-"accessed": "19/10/2026 18:47"
+"series_url": "https://gol.gg/game/stats/83641/page-summary/",
+"accessed": "24/10/2026 11:21 NZDT"
 }
 },
 {

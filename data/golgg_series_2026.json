@@ -12012,6 +12012,18 @@
 "kind": "international"
 },
 {
+"team_a": "Dplus KIA",
+"team_b": "G2 Esports",
+"score_a": 1,
+"score_b": 0,
+"stage": "ROUND1",
+"patch": "16.20",
+"date": "23/10/2026",
+"tournament": "Worlds 2026 Main Event",
+"league": "INTL",
+"kind": "international"
+},
+{
 "team_a": "Karmine Corp",
 "team_b": "Anyone s Legend",
 "score_a": 1,
