@@ -2,37 +2,37 @@
 {
 "region": "LCK",
 "elo": 1733,
-"rating": 1.3432,
-"sd": 0.4915
+"rating": 1.3396,
+"sd": 0.4914
 },
 {
 "region": "LPL",
-"elo": 1590,
-"rating": 0.5158,
-"sd": 0.5031
+"elo": 1579,
+"rating": 0.4535,
+"sd": 0.4993
 },
 {
 "region": "LEC",
-"elo": 1502,
-"rating": 0.0138,
-"sd": 0.4935
+"elo": 1510,
+"rating": 0.056,
+"sd": 0.4918
 },
 {
 "region": "LCS",
-"elo": 1433,
-"rating": -0.3833,
-"sd": 0.5024
+"elo": 1435,
+"rating": -0.3745,
+"sd": 0.5022
 },
 {
 "region": "LCP",
-"elo": 1409,
-"rating": -0.5267,
-"sd": 0.5203
+"elo": 1411,
+"rating": -0.5143,
+"sd": 0.5204
 },
 {
 "region": "CBLOL",
 "elo": 1333,
-"rating": -0.9629,
-"sd": 0.5373
+"rating": -0.9603,
+"sd": 0.5371
 }
 ]
