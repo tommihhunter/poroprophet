@@ -389,11 +389,11 @@
 "score_b": 1,
 "winner": "LYON",
 "bo": 1,
-"patch": null,
+"patch": "16.20",
 "source": {
 "url": "https://gol.gg/tournament/tournament-matchlist/Worlds%202026%20Main%20Event/",
 "series_url": "https://gol.gg/game/stats/83649/page-summary/",
-"accessed": "25/10/2026 10:20 NZDT"
+"accessed": "25/10/2026 10:30 NZDT"
 },
 "round": 2
 }

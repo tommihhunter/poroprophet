@@ -8,7 +8,7 @@
   "p_final": 0.535,
   "p_champion": 0.3706,
   "as_of": "25/10/2026",
-  "generated_nz": "25/10/2026 10:22 NZDT",
+  "generated_nz": "25/10/2026 10:32 NZDT",
   "model": "v4: series-level Bradley-Terry with per-series form shock on the full 2026 season (gol.gg); see model/ratings_v4.py and data/backtest_v5.json",
   "known": "{\"swiss_series\": 12, \"swiss_rounds_drawn\": [1, 2], \"qf_fixed\": false, \"ko_series\": 0}"
  },
@@ -21,7 +21,7 @@
   "p_final": 0.3619,
   "p_champion": 0.1913,
   "as_of": "25/10/2026",
-  "generated_nz": "25/10/2026 10:22 NZDT",
+  "generated_nz": "25/10/2026 10:32 NZDT",
   "model": "v4: series-level Bradley-Terry with per-series form shock on the full 2026 season (gol.gg); see model/ratings_v4.py and data/backtest_v5.json",
   "known": "{\"swiss_series\": 12, \"swiss_rounds_drawn\": [1, 2], \"qf_fixed\": false, \"ko_series\": 0}"
  },
@@ -34,7 +34,7 @@
   "p_final": 0.3603,
   "p_champion": 0.1902,
   "as_of": "25/10/2026",
-  "generated_nz": "25/10/2026 10:22 NZDT",
+  "generated_nz": "25/10/2026 10:32 NZDT",
   "model": "v4: series-level Bradley-Terry with per-series form shock on the full 2026 season (gol.gg); see model/ratings_v4.py and data/backtest_v5.json",
   "known": "{\"swiss_series\": 12, \"swiss_rounds_drawn\": [1, 2], \"qf_fixed\": false, \"ko_series\": 0}"
  },
@@ -47,7 +47,7 @@
   "p_final": 0.274,
   "p_champion": 0.1239,
   "as_of": "25/10/2026",
-  "generated_nz": "25/10/2026 10:22 NZDT",
+  "generated_nz": "25/10/2026 10:32 NZDT",
   "model": "v4: series-level Bradley-Terry with per-series form shock on the full 2026 season (gol.gg); see model/ratings_v4.py and data/backtest_v5.json",
   "known": "{\"swiss_series\": 12, \"swiss_rounds_drawn\": [1, 2], \"qf_fixed\": false, \"ko_series\": 0}"
  },
@@ -60,7 +60,7 @@
   "p_final": 0.1261,
   "p_champion": 0.0476,
   "as_of": "25/10/2026",
-  "generated_nz": "25/10/2026 10:22 NZDT",
+  "generated_nz": "25/10/2026 10:32 NZDT",
   "model": "v4: series-level Bradley-Terry with per-series form shock on the full 2026 season (gol.gg); see model/ratings_v4.py and data/backtest_v5.json",
   "known": "{\"swiss_series\": 12, \"swiss_rounds_drawn\": [1, 2], \"qf_fixed\": false, \"ko_series\": 0}"
  },
@@ -73,7 +73,7 @@
   "p_final": 0.0891,
   "p_champion": 0.0263,
   "as_of": "25/10/2026",
-  "generated_nz": "25/10/2026 10:22 NZDT",
+  "generated_nz": "25/10/2026 10:32 NZDT",
   "model": "v4: series-level Bradley-Terry with per-series form shock on the full 2026 season (gol.gg); see model/ratings_v4.py and data/backtest_v5.json",
   "known": "{\"swiss_series\": 12, \"swiss_rounds_drawn\": [1, 2], \"qf_fixed\": false, \"ko_series\": 0}"
  },
@@ -86,7 +86,7 @@
   "p_final": 0.0509,
   "p_champion": 0.0129,
   "as_of": "25/10/2026",
-  "generated_nz": "25/10/2026 10:22 NZDT",
+  "generated_nz": "25/10/2026 10:32 NZDT",
   "model": "v4: series-level Bradley-Terry with per-series form shock on the full 2026 season (gol.gg); see model/ratings_v4.py and data/backtest_v5.json",
   "known": "{\"swiss_series\": 12, \"swiss_rounds_drawn\": [1, 2], \"qf_fixed\": false, \"ko_series\": 0}"
  },
@@ -99,7 +99,7 @@
   "p_final": 0.0624,
   "p_champion": 0.0107,
   "as_of": "25/10/2026",
-  "generated_nz": "25/10/2026 10:22 NZDT",
+  "generated_nz": "25/10/2026 10:32 NZDT",
   "model": "v4: series-level Bradley-Terry with per-series form shock on the full 2026 season (gol.gg); see model/ratings_v4.py and data/backtest_v5.json",
   "known": "{\"swiss_series\": 12, \"swiss_rounds_drawn\": [1, 2], \"qf_fixed\": false, \"ko_series\": 0}"
  },
@@ -112,7 +112,7 @@
   "p_final": 0.0502,
   "p_champion": 0.0084,
   "as_of": "25/10/2026",
-  "generated_nz": "25/10/2026 10:22 NZDT",
+  "generated_nz": "25/10/2026 10:32 NZDT",
   "model": "v4: series-level Bradley-Terry with per-series form shock on the full 2026 season (gol.gg); see model/ratings_v4.py and data/backtest_v5.json",
   "known": "{\"swiss_series\": 12, \"swiss_rounds_drawn\": [1, 2], \"qf_fixed\": false, \"ko_series\": 0}"
  },
@@ -125,7 +125,7 @@
   "p_final": 0.0282,
   "p_champion": 0.0052,
   "as_of": "25/10/2026",
-  "generated_nz": "25/10/2026 10:22 NZDT",
+  "generated_nz": "25/10/2026 10:32 NZDT",
   "model": "v4: series-level Bradley-Terry with per-series form shock on the full 2026 season (gol.gg); see model/ratings_v4.py and data/backtest_v5.json",
   "known": "{\"swiss_series\": 12, \"swiss_rounds_drawn\": [1, 2], \"qf_fixed\": false, \"ko_series\": 0}"
  },
@@ -138,7 +138,7 @@
   "p_final": 0.0255,
   "p_champion": 0.0052,
   "as_of": "25/10/2026",
-  "generated_nz": "25/10/2026 10:22 NZDT",
+  "generated_nz": "25/10/2026 10:32 NZDT",
   "model": "v4: series-level Bradley-Terry with per-series form shock on the full 2026 season (gol.gg); see model/ratings_v4.py and data/backtest_v5.json",
   "known": "{\"swiss_series\": 12, \"swiss_rounds_drawn\": [1, 2], \"qf_fixed\": false, \"ko_series\": 0}"
  },
@@ -151,7 +151,7 @@
   "p_final": 0.013,
   "p_champion": 0.0032,
   "as_of": "25/10/2026",
-  "generated_nz": "25/10/2026 10:22 NZDT",
+  "generated_nz": "25/10/2026 10:32 NZDT",
   "model": "v4: series-level Bradley-Terry with per-series form shock on the full 2026 season (gol.gg); see model/ratings_v4.py and data/backtest_v5.json",
   "known": "{\"swiss_series\": 12, \"swiss_rounds_drawn\": [1, 2], \"qf_fixed\": false, \"ko_series\": 0}"
  },
@@ -164,7 +164,7 @@
   "p_final": 0.0138,
   "p_champion": 0.0026,
   "as_of": "25/10/2026",
-  "generated_nz": "25/10/2026 10:22 NZDT",
+  "generated_nz": "25/10/2026 10:32 NZDT",
   "model": "v4: series-level Bradley-Terry with per-series form shock on the full 2026 season (gol.gg); see model/ratings_v4.py and data/backtest_v5.json",
   "known": "{\"swiss_series\": 12, \"swiss_rounds_drawn\": [1, 2], \"qf_fixed\": false, \"ko_series\": 0}"
  },
@@ -177,7 +177,7 @@
   "p_final": 0.0081,
   "p_champion": 0.0016,
   "as_of": "25/10/2026",
-  "generated_nz": "25/10/2026 10:22 NZDT",
+  "generated_nz": "25/10/2026 10:32 NZDT",
   "model": "v4: series-level Bradley-Terry with per-series form shock on the full 2026 season (gol.gg); see model/ratings_v4.py and data/backtest_v5.json",
   "known": "{\"swiss_series\": 12, \"swiss_rounds_drawn\": [1, 2], \"qf_fixed\": false, \"ko_series\": 0}"
  },
@@ -190,7 +190,7 @@
   "p_final": 0.0015,
   "p_champion": 0.0001,
   "as_of": "25/10/2026",
-  "generated_nz": "25/10/2026 10:22 NZDT",
+  "generated_nz": "25/10/2026 10:32 NZDT",
   "model": "v4: series-level Bradley-Terry with per-series form shock on the full 2026 season (gol.gg); see model/ratings_v4.py and data/backtest_v5.json",
   "known": "{\"swiss_series\": 12, \"swiss_rounds_drawn\": [1, 2], \"qf_fixed\": false, \"ko_series\": 0}"
  },
@@ -203,7 +203,7 @@
   "p_final": 0.0001,
   "p_champion": 0.0,
   "as_of": "25/10/2026",
-  "generated_nz": "25/10/2026 10:22 NZDT",
+  "generated_nz": "25/10/2026 10:32 NZDT",
   "model": "v4: series-level Bradley-Terry with per-series form shock on the full 2026 season (gol.gg); see model/ratings_v4.py and data/backtest_v5.json",
   "known": "{\"swiss_series\": 12, \"swiss_rounds_drawn\": [1, 2], \"qf_fixed\": false, \"ko_series\": 0}"
  }

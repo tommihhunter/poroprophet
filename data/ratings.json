@@ -1,6 +1,6 @@
 {
  "as_of": "25/10/2026",
- "generated_utc": "24/10/2026 21:22 UTC",
+ "generated_utc": "24/10/2026 21:32 UTC",
  "model": "v4: series-level Bradley-Terry with per-series form shock on the full 2026 season (gol.gg); see model/ratings_v4.py and data/backtest_v5.json",
  "params": {
   "half_life_days": 120.0,
