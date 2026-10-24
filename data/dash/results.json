@@ -274,15 +274,17 @@
 "start_nz": "24/10/2026 12:00",
 "team_a": "LYON",
 "team_b": "TSW",
-"score_a": null,
-"score_b": null,
-"winner": null,
+"score_a": 1,
+"score_b": 0,
+"winner": "LYON",
 "bo": 1,
 "source": {
-"url": "https://esports-api.lolesports.com/persisted/gw/getSchedule?hl=en-GB&leagueId=98767975604431411",
+"url": "https://gol.gg/tournament/tournament-matchlist/Worlds%202026%20Main%20Event/",
 "note": "lolesports schedule (Riot); first entered by the owner from the draw broadcast, confirmed",
-"accessed": "19/10/2026 18:47"
-}
+"series_url": "https://gol.gg/game/stats/83644/page-summary/",
+"accessed": "24/10/2026 14:10 NZDT"
+},
+"patch": "16.20"
 },
 {
 "id": "SW-R1-BLG-MKOI",
