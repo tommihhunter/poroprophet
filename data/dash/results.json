@@ -345,11 +345,11 @@
 "score_b": 0,
 "winner": "MKOI",
 "bo": 1,
-"patch": null,
+"patch": "16.20",
 "source": {
 "url": "https://gol.gg/tournament/tournament-matchlist/Worlds%202026%20Main%20Event/",
 "series_url": "https://gol.gg/game/stats/83647/page-summary/",
-"accessed": "25/10/2026 08:20 NZDT"
+"accessed": "25/10/2026 08:30 NZDT"
 },
 "round": 2
 }
