@@ -374,5 +374,27 @@
 "accessed": "25/10/2026 09:32 NZDT"
 },
 "round": 2
+},
+{
+"id": "SW-R2-KC-LYON",
+"phase": "Swiss",
+"kind": "series",
+"stage": "Swiss round 2",
+"golgg_stage": "ROUND2",
+"date": "24/10/2026",
+"start_nz": null,
+"team_a": "KC",
+"team_b": "LYON",
+"score_a": 0,
+"score_b": 1,
+"winner": "LYON",
+"bo": 1,
+"patch": null,
+"source": {
+"url": "https://gol.gg/tournament/tournament-matchlist/Worlds%202026%20Main%20Event/",
+"series_url": "https://gol.gg/game/stats/83649/page-summary/",
+"accessed": "25/10/2026 10:20 NZDT"
+},
+"round": 2
 }
 ]

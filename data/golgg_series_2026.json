@@ -11988,6 +11988,18 @@
 "kind": "international"
 },
 {
+"team_a": "Karmine Corp",
+"team_b": "LYON",
+"score_a": 0,
+"score_b": 1,
+"stage": "ROUND2",
+"patch": "16.20",
+"date": "24/10/2026",
+"tournament": "Worlds 2026 Main Event",
+"league": "INTL",
+"kind": "international"
+},
+{
 "team_a": "Los Grandes",
 "team_b": "G2 Esports",
 "score_a": 0,
