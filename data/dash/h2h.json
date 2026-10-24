@@ -1,5 +1,17 @@
 [
 {
+"a": "G2",
+"b": "LOS",
+"date": "24/10/2026",
+"tournament": "Worlds 2026 Main Event",
+"stage": "ROUND2",
+"sa": 1,
+"sb": 0,
+"bo": 1,
+"patch": "16.20",
+"year": 2026
+},
+{
 "a": "CFO",
 "b": "MKOI",
 "date": "24/10/2026",
