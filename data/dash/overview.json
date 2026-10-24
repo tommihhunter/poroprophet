@@ -49,11 +49,11 @@
 },
 {
 "key": "n_series",
-"value": 1093
+"value": 1094
 },
 {
 "key": "n_games",
-"value": 2792
+"value": 2793
 },
 {
 "key": "half_life",
@@ -73,7 +73,7 @@
 },
 {
 "key": "region_gap_lck_lpl",
-"value": "+0.93 logit, sd 0.59"
+"value": "+0.88 logit, sd 0.58"
 },
 {
 "key": "w_regular",
@@ -101,6 +101,6 @@
 },
 {
 "key": "exported_nz",
-"value": "25/10/2026 11:21 NZDT"
+"value": "25/10/2026 11:32 NZDT"
 }
 ]
