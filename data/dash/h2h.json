@@ -1,5 +1,17 @@
 [
 {
+"a": "CFO",
+"b": "MKOI",
+"date": "24/10/2026",
+"tournament": "Worlds 2026 Main Event",
+"stage": "ROUND2",
+"sa": 0,
+"sb": 1,
+"bo": 1,
+"patch": "16.20",
+"year": 2026
+},
+{
 "a": "AL",
 "b": "TES",
 "date": "24/10/2026",

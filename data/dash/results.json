@@ -330,5 +330,27 @@
 "accessed": "25/10/2026 07:21 NZDT"
 },
 "round": 2
+},
+{
+"id": "SW-R2-MKOI-CFO",
+"phase": "Swiss",
+"kind": "series",
+"stage": "Swiss round 2",
+"golgg_stage": "ROUND2",
+"date": "24/10/2026",
+"start_nz": null,
+"team_a": "MKOI",
+"team_b": "CFO",
+"score_a": 1,
+"score_b": 0,
+"winner": "MKOI",
+"bo": 1,
+"patch": null,
+"source": {
+"url": "https://gol.gg/tournament/tournament-matchlist/Worlds%202026%20Main%20Event/",
+"series_url": "https://gol.gg/game/stats/83647/page-summary/",
+"accessed": "25/10/2026 08:20 NZDT"
+},
+"round": 2
 }
 ]
