@@ -16000,6 +16000,22 @@
 "intl": true
 },
 {
+"date": "24/10/2026",
+"tournament": "Worlds 2026 Main Event",
+"stage": "ROUND2",
+"kind": "international",
+"league": "INTL",
+"a": "TES",
+"b": "AL",
+"sa": 1,
+"sb": 0,
+"bo": 1,
+"region_a": "LPL",
+"region_b": "LPL",
+"patch": "16.20",
+"intl": true
+},
+{
 "date": "23/10/2026",
 "tournament": "Worlds 2026 Main Event",
 "stage": "ROUND1",

@@ -11988,6 +11988,18 @@
 "kind": "international"
 },
 {
+"team_a": "Top Esports",
+"team_b": "Anyone s Legend",
+"score_a": 1,
+"score_b": 0,
+"stage": "ROUND2",
+"patch": "16.20",
+"date": "24/10/2026",
+"tournament": "Worlds 2026 Main Event",
+"league": "INTL",
+"kind": "international"
+},
+{
 "team_a": "Movistar KOI",
 "team_b": "Bilibili Gaming",
 "score_a": 1,
