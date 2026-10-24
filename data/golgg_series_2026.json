@@ -12000,6 +12000,18 @@
 "kind": "international"
 },
 {
+"team_a": "Los Grandes",
+"team_b": "T1",
+"score_a": 0,
+"score_b": 1,
+"stage": "ROUND1",
+"patch": "16.20",
+"date": "23/10/2026",
+"tournament": "Worlds 2026 Main Event",
+"league": "INTL",
+"kind": "international"
+},
+{
 "team_a": "Top Esports",
 "team_b": "Hanwha Life Esports",
 "score_a": 0,
